@@ -160,9 +160,16 @@ function updateUserUI() {
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = role === 'admin' ? '' : 'none';
   });
+  const canSupervise = ['admin','supervisor'].includes(role);
   document.querySelectorAll('.supervisor-only').forEach(el => {
-    el.style.display = ['admin','supervisor'].includes(role) ? '' : 'none';
+    el.style.display = canSupervise ? 'list-item' : 'none';
   });
+  if (!canSupervise) {
+    document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+      dropdown.querySelector('.nav-submenu')?.remove();
+      dropdown.querySelector(':scope > a span')?.remove();
+    });
+  }
   document.querySelectorAll('.school-only').forEach(el => { el.style.display = role === 'school' ? '' : 'none'; });
 }
 
@@ -219,77 +226,6 @@ function switchTab(tabGroup, tabName) {
   if (!group) return;
   group.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
   group.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.tabContent === tabName));
-}
-
-// ============================================================
-// Calendar
-// ============================================================
-
-let calendarDate = new Date();
-let calendarEvents = [];
-
-function renderCalendar(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  const year = calendarDate.getFullYear();
-  const month = calendarDate.getMonth();
-  const today = new Date();
-  const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-  const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
-
-  let html = `<div class="calendar"><div class="calendar-header">
-    <button class="calendar-nav" onclick="prevMonth('${containerId}')">&#8249;</button>
-    <h3>${monthNames[month]} ${year + 543}</h3>
-    <button class="calendar-nav" onclick="nextMonth('${containerId}')">&#8250;</button>
-  </div><div class="calendar-grid">`;
-
-  dayNames.forEach(d => { html += `<div class="calendar-day-header">${d}</div>`; });
-
-  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-  for (let i = 0; i < totalCells; i++) {
-    let dayNum, dateStr, isOther = false;
-    if (i < firstDay) {
-      dayNum = daysInPrevMonth - firstDay + i + 1;
-      const pm = month === 0 ? 11 : month - 1, py = month === 0 ? year - 1 : year;
-      dateStr = `${py}-${String(pm + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-      isOther = true;
-    } else if (i >= firstDay + daysInMonth) {
-      dayNum = i - firstDay - daysInMonth + 1;
-      const nm = month === 11 ? 0 : month + 1, ny = month === 11 ? year + 1 : year;
-      dateStr = `${ny}-${String(nm + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-      isOther = true;
-    } else {
-      dayNum = i - firstDay + 1;
-      dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-    }
-
-    const isToday = !isOther && today.getDate() === dayNum && today.getMonth() === month && today.getFullYear() === year;
-    const dayEvents = calendarEvents.filter(e => e.date === dateStr);
-    let cls = 'calendar-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
-
-    html += `<div class="${cls}"><div class="day-number">${dayNum}</div>`;
-    dayEvents.slice(0, 2).forEach(evt => {
-      const sc = evt.status === 'ยืนยันแล้ว' ? 'confirmed' : ['นิเทศแล้ว', 'นิเทศสำเร็จ'].includes(evt.status) ? 'completed' : 'pending';
-      html += `<div class="calendar-event ${sc}" title="${escapeHtml(evt.title)}">${escapeHtml(evt.title)}</div>`;
-    });
-    if (dayEvents.length > 2) html += `<div style="font-size:10px;color:#999;">+${dayEvents.length - 2}</div>`;
-    html += '</div>';
-  }
-  html += '</div></div>';
-  container.innerHTML = html;
-}
-
-function prevMonth(id) { calendarDate.setMonth(calendarDate.getMonth() - 1); loadCalendarEvents(id); }
-function nextMonth(id) { calendarDate.setMonth(calendarDate.getMonth() + 1); loadCalendarEvents(id); }
-
-function loadCalendarEvents(containerId) {
-  apiPost('getCalendarData', { month: calendarDate.getMonth(), year: calendarDate.getFullYear() })
-    .then(result => { if (result.success) { calendarEvents = result.events; renderCalendar(containerId); } })
-    .catch(err => console.error('Calendar error:', err));
 }
 
 // ============================================================
