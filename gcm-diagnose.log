@@ -1,0 +1,238 @@
+﻿Diagnose log at 2026-11-15T10:15:03Z
+
+AppPath: C:\Program Files\Git\mingw64\bin\git-credential-manager.exe
+InstallDir: C:\Program Files\Git\mingw64\bin\
+Version: 2.9.0+194ba290ce533465310d50f811684ab180536ae7
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 26300)
+Reading environment variables... OK
+ Variables:
+OneDriveConsumer=C:\Users\2564-000004\OneDrive
+ProgramFiles(x86)=C:\Program Files (x86)
+MSYSTEM=MINGW64
+PROCESSOR_REVISION=8c01
+PAGER=cat
+ChocolateyInstall=C:\ProgramData\chocolatey
+BROWSER_USE_TINYSKY_ENABLED=1
+ZES_ENABLE_SYSMAN=1
+TMP=C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp
+CODEX_INTERNAL_ORIGINATOR_OVERRIDE=codex_work_desktop
+PROCESSOR_LEVEL=6
+Path=C:/Program Files/Git/mingw64/libexec/git-core;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\2564-000004\bin;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell;C:\Users\2564-000004\.codex\tmp\arg0-windows\codex-arg0IPnJ5h;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\libheif\libheif\bin;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\jxrlib\jxrlib\bin;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\poppler\Library\bin;C:\Python314\Scripts\;C:\Python314\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Microsoft VS Code\bin;C:\Program Files\dotnet\;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\Program Files\Docker\Docker\resources\bin;C:\Users\2564-000004\AppData\Local\Microsoft\WindowsApps;C:\Users\2564-000004\AppData\Local\Programs\Antigravity\bin;C:\Users\2564-000004\AppData\Roaming\npm;D:\AppServ\Apache24\bin;D:\AppServ\php5;D:\AppServ\MySQL\bin;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\node\bin;C:\Program Files\WindowsApps\OpenAI.CodexPrimaryRuntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\git\cmd
+SystemRoot=C:\WINDOWS
+PUBLIC=C:\Users\Public
+RUST_LOG=info,codex_exec_server::remote=info
+CODEX_TASK_WORKSPACE_NODE=C:\Program Files\WindowsApps\OpenAI.Codex_26.1106.6628.0_x64__2p2nqsd0c76g0\app\resources\cua_node\bin\node.exe
+CODEX_VERSION=0.0.0
+NODE_REPL_TRUSTED_CODE_PATHS=C:\Users\2564-000004\.codex;C:\Program Files\WindowsApps\OpenAI.Codex_26.1106.6628.0_x64__2p2nqsd0c76g0\app\resources\cua_node\bin\node_modules
+CODEX_TASK_WORKSPACE_VERIFYING_IDENTITY=MCowBQYDK2VwAyEATakL230fYDYzqE6CRJptixfbOjEmLPV+HNnwvu0aYto=
+ChocolateyLastPathUpdate=134212912741413001
+USERPROFILE=C:\Users\2564-000004
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+LOGONSERVER=\\2564-000004
+TEMP=C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp
+NO_COLOR=1
+SHELL=C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe
+BROWSER_USE_ACCESS_VERIFYING_IDENTITY=MCowBQYDK2VwAyEATakL230fYDYzqE6CRJptixfbOjEmLPV+HNnwvu0aYto=
+CODEX_THREAD_ID=6af96fcf-609c-8191-960d-ac4fffe82091
+PLINK_PROTOCOL=ssh
+CODEX_TOOL_CALL_ID=exec-7c0f4665-2405-43f2-ae57-d5e1d58b0ace
+GH_PAGER=cat
+OneDrive=D:\OneDrive - ICCS
+PROCESSOR_ARCHITECTURE=AMD64
+ZSH_TMUX_AUTOSTARTED=true
+CommonProgramFiles=C:\Program Files\Common Files
+windir=C:\WINDOWS
+SystemDrive=C:
+CODEX_APP_TOOLS_PIPE_PATH=\\.\pipe\codex-app-tools-25eec99f-3ace-4f9f-81a4-065fc38d5995
+CODEX_SHELL=1
+ProgramData=C:\ProgramData
+LC_CTYPE=C.UTF-8
+ZSH_TMUX_AUTOSTART=false
+HOMEPATH=\Users\2564-000004
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW;.CPL
+CODEX_TECTONIC_PATH=C:\Program Files\WindowsApps\OpenAI.Codex_26.1106.6628.0_x64__2p2nqsd0c76g0\app\resources\tectonic\tectonic.exe
+COMPUTERNAME=2564-000004
+BROWSER_USE_ACCESS_PIPE_PATH=\\.\pipe\codex-app-tools-25eec99f-3ace-4f9f-81a4-065fc38d5995
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 140 Stepping 1, GenuineIntel
+ALLUSERSPROFILE=C:\ProgramData
+CommonProgramW6432=C:\Program Files\Common Files
+USERNAME=2564-000004
+MOZ_PLUGIN_PATH=C:\Program Files\Foxit Software\Foxit PDF Reader\plugins\
+OneDriveCommercial=D:\OneDrive - ICCS
+CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS=1
+NUMBER_OF_PROCESSORS=8
+TERM=dumb
+GIT_EXEC_PATH=C:/Program Files/Git/mingw64/libexec/git-core
+CODEX_WINDOWS_SANDBOX_PACKAGE_FAMILY=OpenAI.Codex_2p2nqsd0c76g0
+ProgramW6432=C:\Program Files
+DriverData=C:\Windows\System32\Drivers\DriverData
+HOMEDRIVE=C:
+DISABLE_AUTO_UPDATE=true
+GIT_TRACE2_PARENT_SID=c8ad17f0-8517-4f06-8a5a-2b41cd233127
+CODEX_WINDOWS_REGISTERED_CORE=1
+CODEX_ELECTRON_RESOURCES_PATH=C:\Program Files\WindowsApps\OpenAI.Codex_26.1106.6628.0_x64__2p2nqsd0c76g0\app\resources
+OS=Windows_NT
+CODEX_SESSION_ID=6af96fcf-609c-8191-960d-ac4fffe82091
+LANG=C.UTF-8
+ComSpec=C:\WINDOWS\system32\cmd.exe
+USERDOMAIN_ROAMINGPROFILE=2564-000004
+NODE_REPL_TRUSTED_SERVICES={"browser":"C:/Users/2564-000004/.codex/plugins/cache/openai-bundled/browser/26.1106.51428/scripts/browser-service.mjs","sky":"@oai/sky/service"}
+HOME=C:\Users\2564-000004
+PSModulePath=D:\OneDrive - ICCS\เอกสาร\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\windowsapps\openai.codexprimaryruntime.v26-1112-737-0_26.1112.737.0_x64__3k8sg7r9htsxt\dependencies\native\powershell\Modules;D:\OneDrive - ICCS\เอกสาร\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+CODEX_SANDBOX_NETWORK_DISABLED=1
+ProgramFiles=C:\Program Files
+CODEX_CI=1
+LC_ALL=C.UTF-8
+APPDATA=C:\Users\2564-000004\AppData\Roaming
+USERDOMAIN=2564-000004
+CODEX_SAGE_BACKFILL_TRACKER_TAB_REUSE=1
+LOCALAPPDATA=C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}
+BROWSER_USE_AVAILABLE_BACKENDS=chrome,iab,mcpapps
+BROWSER_USE_ACCESS_EXECUTOR_ID=ccarenv_b64_Y2NhcmVudl82YWJjZDI4MjI5YTQ4MTkxOTQ2ZDVjMWNiY2U2MGFiMw
+TMPDIR=C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp
+GIT_PAGER=cat
+COLORTERM=
+NODE_REPL_NODE_MODULE_DIRS=C:\Program Files\WindowsApps\OpenAI.Codex_26.1106.6628.0_x64__2p2nqsd0c76g0\app\resources\cua_node\bin\node_modules
+LOG_FORMAT=json
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp\b3e646849022679a71279e66'... OK
+Reading from temporary file 'C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp\b3e646849022679a71279e66'... OK
+Deleting temporary file 'C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\Temp\b3e646849022679a71279e66'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\2564-000004
+UserDataDirectoryPath: C:\Users\2564-000004\.gcm
+GetCurrentDirectory(): D:\nited
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: False
+Exception:
+System.Net.Http.HttpRequestException: An error occurred while sending the request. ---> System.Net.WebException: The remote name could not be resolved: 'example.com'
+   at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult)
+   at System.Net.Http.HttpClientHandler.GetResponseCallback(IAsyncResult ar)
+   --- End of inner exception stack trace ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at GitCredentialManager.Diagnostics.NetworkingDiagnostic.<RunInternalAsync>d__4.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at GitCredentialManager.Diagnostics.Diagnostic.<RunAsync>d__6.MoveNext()
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com... warning: HEAD request failed
+Sending HEAD request to http://httpforever.com... warning: HEAD request failed
+Sending HEAD request to https://example.com...
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.55.0.windows.3'
+Locating current repository...Git repository at 'D:/nited/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:C:/Program Files/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.required=true
+file:C:/Program Files/Git/etc/gitconfig	http.sslbackend=schannel
+file:C:/Program Files/Git/etc/gitconfig	core.autocrlf=true
+file:C:/Program Files/Git/etc/gitconfig	core.fscache=true
+file:C:/Program Files/Git/etc/gitconfig	core.symlinks=false
+file:C:/Program Files/Git/etc/gitconfig	pull.rebase=false
+file:C:/Program Files/Git/etc/gitconfig	credential.helper=manager
+file:C:/Program Files/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:C:/Program Files/Git/etc/gitconfig	init.defaultbranch=master
+file:C:/Users/2564-000004/.gitconfig	safe.directory=D:/nited
+file:C:/Users/2564-000004/.gitconfig	safe.directory=D:/OneDrive - ICCS/project_all/checking-takbaischool
+file:C:/Users/2564-000004/.gitconfig	safe.directory=D:/PONDOK
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://github.com/sesaonara/nited.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	user.email=digital01@sesaonara.go.th
+file:.git/config	user.name=SESAO NARA
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: False
+Exception:
+GitCredentialManager.Interop.InteropException: Failed to enumerate credentials. ---> System.ComponentModel.Win32Exception: Access is denied
+   --- End of inner exception stack trace ---
+   at GitCredentialManager.Interop.Windows.Native.Win32Error.ThrowIfError(Int32 error, String defaultErrorMessage, ITrace2 trace2)
+   at GitCredentialManager.Interop.Windows.WindowsCredentialManager.<Enumerate>d__8.MoveNext()
+   at System.Linq.Enumerable.FirstOrDefault[TSource](IEnumerable`1 source)
+   at GitCredentialManager.Interop.Windows.WindowsCredentialManager.Remove(String service, String account)
+   at GitCredentialManager.Diagnostics.CredentialStoreDiagnostic.RunInternalAsync(StringBuilder log, IList`1 additionalFiles)
+   at GitCredentialManager.Diagnostics.Diagnostic.<RunAsync>d__6.MoveNext()
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential...Deleting test credential...
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\2564-000004\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{66b97685-8e19-4a50-93b3-da82a2a7f209}\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: False
+Exception:
+System.Net.Http.HttpRequestException: An error occurred while sending the request. ---> System.Net.WebException: The remote name could not be resolved: 'api.github.com'
+   at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult)
+   at System.Net.Http.HttpClientHandler.GetResponseCallback(IAsyncResult ar)
+   --- End of inner exception stack trace ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at GitHub.GitHubRestApi.<GetMetaInfoAsync>d__5.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at GitHub.Diagnostics.GitHubApiDiagnostic.<RunInternalAsync>d__2.MoveNext()
+--- End of stack trace from previous location where exception was thrown ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task)
+   at GitCredentialManager.Diagnostics.Diagnostic.<RunAsync>d__6.MoveNext()
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint...

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ระบบนิเทศออนไลน์ สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส">
+  <title>ระบบนิเทศออนไลน์ | สพม.นราธิวาส</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="หน้าหลักระบบนิเทศ สพม.นราธิวาส">
+      <span class="brand-mark" aria-hidden="true">น</span>
+      <span><b>ระบบนิเทศออนไลน์</b><small>สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</small></span>
+    </a>
+    <nav aria-label="เมนูหลัก">
+      <a href="#about">เกี่ยวกับระบบ</a>
+      <a href="#schools">โรงเรียนในสังกัด</a>
+      <a href="#contact">ติดต่อ</a>
+      <a class="nav-button" href="pages/login.html">เข้าสู่ระบบ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><i></i> พื้นที่ความร่วมมือเพื่อพัฒนาคุณภาพการศึกษา</span>
+        <h1>นิเทศ ติดตาม<br><em>และพัฒนาไปด้วยกัน</em></h1>
+        <p>แพลตฟอร์มกลางสำหรับโรงเรียนมัธยมศึกษาในสังกัด สพม.นราธิวาส ใช้วางแผนการนิเทศ ส่งหลักฐาน และติดตามข้อเสนอแนะอย่างเป็นระบบ</p>
+        <div class="hero-actions">
+          <a class="button button-light" href="pages/login.html">เข้าสู่ระบบนิเทศ <span aria-hidden="true">→</span></a>
+          <a class="text-link" href="#schools">ค้นหาโรงเรียน <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-note"><span class="note-icon">✓</span> ทำงานร่วมกันระหว่างทีมผู้นิเทศและโรงเรียน</div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+        <div class="art-card card-main"><div class="mini-label">SUPERVISION PLAN</div><div class="art-title">แผนนิเทศ<br>สถานศึกษา</div><div class="art-line"></div><div class="art-line short"></div><div class="art-check">✓</div></div>
+        <div class="art-card card-float"><span class="float-icon">✦</span><span><b>ติดตามต่อเนื่อง</b><small>เห็นพัฒนาการในทุกขั้นตอน</small></span></div>
+        <div class="art-dot dot-a"></div><div class="art-dot dot-b"></div>
+      </div>
+      <div class="hero-bottom"><span>สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</span><span>SUPERVISION · COLLABORATION · DEVELOPMENT</span></div>
+    </section>
+
+    <section class="section about" id="about">
+      <div class="section-heading"><span class="eyebrow dark">ระบบนิเทศออนไลน์</span><h2>รวมงานนิเทศไว้ในพื้นที่เดียว</h2><p>สนับสนุนการทำงานที่ต่อเนื่อง ตั้งแต่การวางแผนจนถึงการติดตามผล เพื่อให้โรงเรียนและผู้นิเทศสื่อสารบนข้อมูลชุดเดียวกัน</p></div>
+      <div class="feature-grid">
+        <article class="feature"><span class="feature-icon blue">01</span><h3>วางแผนและนัดหมาย</h3><p>จัดกำหนดการนิเทศและประสานงานระหว่างโรงเรียนกับทีมผู้นิเทศ</p></article>
+        <article class="feature"><span class="feature-icon green">02</span><h3>รวบรวมหลักฐาน</h3><p>ส่งเอกสารและหลักฐานประกอบการนิเทศไว้เป็นหมวดหมู่และตรวจสอบได้</p></article>
+        <article class="feature"><span class="feature-icon amber">03</span><h3>ติดตามข้อเสนอแนะ</h3><p>บันทึกผลการนิเทศและใช้ข้อเสนอแนะประกอบการพัฒนาของโรงเรียน</p></article>
+      </div>
+    </section>
+
+    <section class="directory" id="schools">
+      <div class="directory-inner">
+        <div class="directory-heading"><div><span class="eyebrow dark">ทำเนียบสถานศึกษา</span><h2>โรงเรียนมัธยมศึกษาในสังกัด</h2><p>รายชื่อจากชีต Schools ของระบบ แสดงเฉพาะชื่อโรงเรียน รหัส และอำเภอ</p></div><div class="school-count"><strong id="schoolCount">—</strong><span>โรงเรียน</span></div></div>
+        <label class="search-box"><span aria-hidden="true">⌕</span><input id="schoolSearch" type="search" placeholder="ค้นหาชื่อโรงเรียนหรืออำเภอ" autocomplete="off"><kbd>ค้นหา</kbd></label>
+        <div id="schoolList" class="school-grid" aria-live="polite"><div class="directory-state">กำลังโหลดรายชื่อโรงเรียน…</div></div>
+        <p class="directory-footnote" id="directoryStatus"></p>
+      </div>
+    </section>
+
+    <section class="contact" id="contact"><div><span class="eyebrow">ติดต่อหน่วยงาน</span><h2>พร้อมเริ่มต้นใช้งานระบบนิเทศ</h2><p>หากต้องการบัญชีผู้ใช้หรือสอบถามการใช้งาน โปรดติดต่อสำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</p></div><div class="contact-actions"><a class="button button-light" href="pages/login.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a><a class="contact-link" href="https://sesaonara.org/" target="_blank" rel="noopener noreferrer">เว็บไซต์ สพม.นราธิวาส ↗</a></div></section>
+  </main>
+
+  <footer><a class="brand footer-brand" href="index.html"><span class="brand-mark">น</span><span><b>ระบบนิเทศออนไลน์</b><small>สพม.นราธิวาส</small></span></a><span>© <span id="year"></span> สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</span></footer>
+  <script src="js/config.js"></script>
+  <script src="js/home.js"></script>
+</body>
+</html>
