@@ -82,20 +82,13 @@
       </div>
     </div>
 
-    <!-- Calendar + Recent -->
+    <!-- Recent supervision bookings -->
     <div class="grid-2-1">
       <div>
-        <!-- Calendar -->
-        <div class="card" style="margin-bottom:20px;">
-          <div class="card-body" style="padding:0;">
-            <div id="dashboardCalendar"></div>
-          </div>
-        </div>
-
         <!-- Recent Bookings -->
         <div class="card">
           <div class="card-header">
-            <h3>&#128197; การจองล่าสุด</h3>
+          <h3>&#128197; กำหนดการนิเทศ</h3>
             <a href="booking.html" class="btn btn-sm btn-outline">ดูทั้งหมด</a>
           </div>
           <div class="card-body" style="padding:0;">
@@ -290,10 +283,6 @@
         })
         .catch(err => console.error(err));
     }
-
-    // Load calendar
-    calendarDate = new Date();
-    loadCalendarEvents('dashboardCalendar');
 
     // Init
     updateUserUI();

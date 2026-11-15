@@ -137,13 +137,6 @@
 
       <!-- Sidebar -->
       <div>
-        <!-- Calendar -->
-        <div class="card" style="margin-bottom:20px;">
-          <div class="card-body" style="padding:0;">
-            <div id="bookingCalendar"></div>
-          </div>
-        </div>
-
         <!-- My Bookings -->
         <div class="card">
           <div class="card-header">
@@ -308,7 +301,6 @@
             showToast(editingBookingRow ? 'แก้ไขกำหนดนิเทศแล้ว' : 'บันทึกกำหนดนิเทศแล้ว รอการยืนยันจากผู้ดูแลระบบ', 'success');
             resetBookingForm();
             loadMyBookings();
-            loadCalendarEvents('bookingCalendar');
           } else {
             showToast(result.message, 'error');
           }
@@ -401,7 +393,6 @@
           if (!result.success) throw new Error(result.message || 'บันทึกสถานะไม่สำเร็จ');
           showToast(result.message || 'บันทึกผลนิเทศสำเร็จ', 'success');
           loadMyBookings();
-          loadCalendarEvents('bookingCalendar');
         })
         .catch(error => showToast(error.message || 'เกิดข้อผิดพลาด', 'error'));
     }
@@ -455,8 +446,6 @@
     updateUserUI();
     initForm();
     loadMyBookings();
-    calendarDate = new Date();
-    loadCalendarEvents('bookingCalendar');
   </script>
 </body>
 </html>
