@@ -6,10 +6,11 @@
 const SPREADSHEET_ID = '1ojkushQJ6-ueIvmTwhxqOQbsYAXMzVNMKS-UcyKfAQ0';
 const DRIVE_FOLDER_ID = '1FDj-gDOWuvq8A_kugvPrBhPZ8X4pHVUo';
 const SETTINGS_SHEET_NAME = 'Settings';
-const SETTINGS_CACHE_KEY = 'nited_system_settings_v1';
+const SETTINGS_CACHE_KEY = 'nited_system_settings_v2';
 const DEFAULT_SYSTEM_SETTINGS = [
   ['SYSTEM_NAME', 'ระบบนิเทศออนไลน์', 'ชื่อระบบ'],
   ['OFFICE_NAME', 'สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส', 'ชื่อหน่วยงาน'],
+  ['LOGO_URL', 'https://www.sesaonara.go.th/wp-content/uploads/elementor/thumbs/smpnt-web-header3-pm81vc0p83fwfylect5mcnanbnw7ct0kusm9zvfjqe.png', 'URL โลโก้หน่วยงาน'],
   ['TIME_ZONE', 'Asia/Bangkok', 'เขตเวลา'],
   ['DRIVE_FOLDER_ID', DRIVE_FOLDER_ID, 'รหัสโฟลเดอร์หลักสำหรับเก็บไฟล์'],
   ['BOOKING_PENDING', 'รอดำเนินการ', 'สถานะกำหนดนิเทศ: รอดำเนินการ'],
@@ -70,6 +71,16 @@ function doGet(e) {
     }
     const result = getPublicSchools_();
     return ContentService.createTextOutput(callback + '(' + JSON.stringify(result) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  if (e && e.parameter && e.parameter.api === 'publicSettings') {
+    const callback = String(e.parameter.callback || '');
+    if (!/^[A-Za-z_$][\w$]{0,80}$/.test(callback)) {
+      return ContentService.createTextOutput('/* Invalid callback */')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    const settings = getPublicSettings_();
+    return ContentService.createTextOutput(callback + '(' + JSON.stringify(settings) + ');')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
   const page = e.parameter.page || 'index';
@@ -248,12 +259,9 @@ function getSystemSettings_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(SETTINGS_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SETTINGS_SHEET_NAME);
-  if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, 3).setValues([['Setting Key', 'Setting Value', 'Description']]);
-    sheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#1a5276').setFontColor('white');
-  }
+  ensureSettingsLayout_(sheet);
   const existing = sheet.getLastRow() > 1
-    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues() : [];
+    ? sheet.getRange(2, 4, sheet.getLastRow() - 1, 3).getValues() : [];
   const values = {};
   existing.forEach(row => {
     const key = String(row[0] || '').trim();
@@ -263,7 +271,7 @@ function getSystemSettings_() {
     values.BOOKING_COMPLETED = 'นิเทศสำเร็จ';
     for (let i = 0; i < existing.length; i++) {
       if (String(existing[i][0] || '').trim() === 'BOOKING_COMPLETED') {
-        sheet.getRange(i + 2, 2).setValue(values.BOOKING_COMPLETED);
+        sheet.getRange(i + 2, 5).setValue(values.BOOKING_COMPLETED);
         break;
       }
     }
@@ -271,12 +279,80 @@ function getSystemSettings_() {
   const missing = DEFAULT_SYSTEM_SETTINGS.filter(row => !Object.prototype.hasOwnProperty.call(values, row[0]));
   if (missing.length) {
     const start = sheet.getLastRow() + 1;
-    sheet.getRange(start, 1, missing.length, 3).setValues(missing);
+    sheet.getRange(start, 4, missing.length, 3).setValues(missing);
     missing.forEach(row => { values[row[0]] = row[1]; });
   }
+  values.OFFICE_NAME = readSettingsCell_(sheet, 'B2') || values.OFFICE_NAME || '';
+  values.LOGO_URL = readSettingsCell_(sheet, 'B7') || values.LOGO_URL || '';
+  values.SYSTEM_NAME = readSettingsCell_(sheet, 'B8') || values.SYSTEM_NAME || '';
   applySystemSettings_(values);
   cache.put(SETTINGS_CACHE_KEY, JSON.stringify(values), 60);
   return values;
+}
+
+function ensureSettingsLayout_(sheet) {
+  const firstRow = sheet.getLastColumn() >= 2
+    ? sheet.getRange(1, 1, 1, Math.min(sheet.getLastColumn(), 6)).getDisplayValues()[0] : [];
+  const legacyKeyValue = String(firstRow[0] || '').trim() === 'Setting Key' && String(firstRow[1] || '').trim() === 'Setting Value';
+  const settingsTableExists = sheet.getLastColumn() >= 5 &&
+    String(sheet.getRange(1, 4).getDisplayValue()).trim() === 'Setting Key' &&
+    String(sheet.getRange(1, 5).getDisplayValue()).trim() === 'Setting Value';
+
+  let fixedValues = {
+    OFFICE_NAME: readSettingsCell_(sheet, 'B2'),
+    LOGO_URL: readSettingsCell_(sheet, 'B7'),
+    SYSTEM_NAME: readSettingsCell_(sheet, 'B8')
+  };
+  let oldEntries = [];
+  if (legacyKeyValue) {
+    oldEntries = sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues() : [];
+    const oldValues = {};
+    oldEntries.forEach(row => { const key=String(row[0] || '').trim(); if (key) oldValues[key]=row[1]; });
+    fixedValues = {
+      OFFICE_NAME: String(oldValues.OFFICE_NAME || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'OFFICE_NAME')[1]),
+      LOGO_URL: String(oldValues.LOGO_URL || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'LOGO_URL')[1]),
+      SYSTEM_NAME: String(oldValues.SYSTEM_NAME || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'SYSTEM_NAME')[1])
+    };
+  }
+
+  if (!settingsTableExists) {
+    const oldValues = {};
+    oldEntries.forEach(row => { const key=String(row[0] || '').trim(); if (key) oldValues[key]=row[1]; });
+    const defaults = DEFAULT_SYSTEM_SETTINGS.map(row => [row[0], oldValues[row[0]] !== undefined ? oldValues[row[0]] : row[1], row[2]]);
+    const known = new Set(defaults.map(row => row[0]));
+    oldEntries.forEach(row => { const key=String(row[0] || '').trim(); if (key && !known.has(key)) defaults.push(row); });
+    if (legacyKeyValue) sheet.getRange(1, 1, sheet.getMaxRows(), Math.min(3, Math.max(sheet.getLastColumn(), 1))).clearContent();
+    sheet.getRange(1, 4, 1, 3).setValues([['Setting Key', 'Setting Value', 'Description']]);
+    sheet.getRange(1, 4, 1, 3).setFontWeight('bold').setBackground('#1a5276').setFontColor('white');
+    sheet.getRange(2, 4, defaults.length, 3).setValues(defaults);
+  }
+
+  if (!String(sheet.getRange('A2').getDisplayValue()).trim()) sheet.getRange('A2').setValue('ชื่อสำนักงาน');
+  if (!String(sheet.getRange('A7').getDisplayValue()).trim()) sheet.getRange('A7').setValue('โลโกหน่วยงาน (URL)');
+  if (!String(sheet.getRange('A8').getDisplayValue()).trim()) sheet.getRange('A8').setValue('ชื่อระบบ');
+  if (!String(sheet.getRange('B2').getDisplayValue()).trim()) sheet.getRange('B2').setValue(fixedValues.OFFICE_NAME || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'OFFICE_NAME')[1]);
+  if (!String(sheet.getRange('B7').getDisplayValue()).trim()) sheet.getRange('B7').setValue(fixedValues.LOGO_URL || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'LOGO_URL')[1]);
+  if (!String(sheet.getRange('B8').getDisplayValue()).trim()) sheet.getRange('B8').setValue(fixedValues.SYSTEM_NAME || DEFAULT_SYSTEM_SETTINGS.find(row => row[0] === 'SYSTEM_NAME')[1]);
+}
+
+function getPublicSettings_() {
+  const settings = getSystemSettings_();
+  return {
+    success: true,
+    officeName: settings.OFFICE_NAME,
+    logoUrl: settings.LOGO_URL,
+    systemName: settings.SYSTEM_NAME
+  };
+}
+
+function readSettingsCell_(sheet, cell) {
+  const range = sheet.getRange(cell);
+  const displayValue = String(range.getDisplayValue() || '').trim();
+  if (displayValue) return displayValue;
+  // Also accept a logo entered as =IMAGE("https://…") in Settings!B7.
+  const formula = String(range.getFormula() || '').trim();
+  const imageMatch = formula.match(/^=IMAGE\(\s*["'](https?:\/\/[^"']+)["']/i);
+  return imageMatch ? imageMatch[1].trim() : '';
 }
 
 function applySystemSettings_(values) {

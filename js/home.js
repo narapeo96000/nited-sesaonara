@@ -7,6 +7,57 @@
   let allSchools = [];
   document.getElementById('year').textContent = new Date().getFullYear() + 543;
   renderAuthenticatedMenu();
+  loadPublicSettings();
+
+  function loadPublicSettings() {
+    const callback = `nitedSettings_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const script = document.createElement('script');
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      delete window[callback];
+      script.remove();
+    };
+    const timeout = setTimeout(finish, 12000);
+    window[callback] = settings => {
+      finish();
+      if (!settings || !settings.success) return;
+      const officeName = String(settings.officeName || '').trim();
+      const systemName = String(settings.systemName || '').trim();
+      const logoUrl = safeImageUrl(settings.logoUrl);
+      document.querySelectorAll('[data-setting-office-name]').forEach(element => {
+        if (officeName) element.textContent = officeName;
+      });
+      document.querySelectorAll('[data-setting-system-name]').forEach(element => {
+        if (systemName) element.textContent = systemName;
+      });
+      document.querySelectorAll('[data-setting-logo]').forEach(image => {
+        if (!logoUrl) return;
+        image.hidden = false;
+        image.src = logoUrl;
+      });
+      if (systemName || officeName) {
+        const title = [systemName, officeName].filter(Boolean).join(' | ');
+        document.title = title;
+        const description = document.getElementById('pageDescription');
+        if (description) description.content = title;
+      }
+    };
+    script.onerror = finish;
+    script.src = `${CONFIG.APPS_SCRIPT_URL}?api=publicSettings&callback=${encodeURIComponent(callback)}`;
+    document.head.appendChild(script);
+  }
+
+  function safeImageUrl(value) {
+    const input = String(value || '').trim();
+    if (!input) return '';
+    try {
+      const url = new URL(input, location.href);
+      return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch (_) { return ''; }
+  }
 
   function renderAuthenticatedMenu() {
     let user = null;
