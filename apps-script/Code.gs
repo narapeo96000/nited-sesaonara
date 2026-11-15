@@ -64,16 +64,23 @@ function doGet(e) {
 function getPublicSchools_() {
   try {
     const rows = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
+    const columns = getSchoolColumns_(rows[0] || []);
     const schools = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row[0] || row[7] === false) continue;
+      const schoolId = schoolValue_(row, columns, 'schoolId');
+      if (!schoolId || !isSchoolActive_(schoolValue_(row, columns, 'active'))) continue;
       schools.push({
-        schoolId: row[0],
-        name: row[1] || '',
-        code: row[2] || '',
-        district: row[3] || '',
-        address: row[9] || ''
+        schoolId: schoolId,
+        name: schoolValue_(row, columns, 'name'),
+        code: schoolValue_(row, columns, 'code'),
+        district: schoolValue_(row, columns, 'district'),
+        director: schoolValue_(row, columns, 'director'),
+        address: schoolValue_(row, columns, 'address'),
+        website: schoolValue_(row, columns, 'website'),
+        latitude: schoolValue_(row, columns, 'latitude'),
+        longitude: schoolValue_(row, columns, 'longitude'),
+        coordinates: schoolValue_(row, columns, 'coordinates')
       });
     }
     schools.sort((a, b) => String(a.name).localeCompare(String(b.name), 'th'));
@@ -148,7 +155,7 @@ function ensureSheetHeaders(sheet, name) {
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
     [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
-    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Active', 'Created At', 'Address', 'Website']
+    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website']
   }[name];
   if (!headers) return;
 
@@ -169,7 +176,7 @@ function initializeSheet(sheet, name) {
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
     [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
-    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Active', 'Created At', 'Address', 'Website']
+    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website']
   };
 
   if (headers[name]) {
@@ -1167,18 +1174,67 @@ function getClassLevels() {
 // School directory (one row per school in the service area)
 // ============================================================
 
+function getSchoolColumns_(headerRow) {
+  const headers = (headerRow || []).map(value => String(value || '').trim().toLowerCase());
+  const aliases = {
+    schoolId: ['school id', 'schoolid', 'รหัสสถานศึกษา'],
+    name: ['school name', 'name', 'ชื่อโรงเรียน'],
+    code: ['school code', 'code', 'รหัสโรงเรียน'],
+    district: ['district', 'อำเภอ'],
+    director: ['director', 'principal', 'school director', 'ชื่อผู้บริหาร', 'ผู้บริหาร'],
+    phone: ['phone', 'telephone', 'โทรศัพท์'],
+    email: ['email', 'อีเมล'],
+    address: ['address', 'school address', 'ที่อยู่'],
+    active: ['active', 'status', 'สถานะ', 'ใช้งาน'],
+    createdAt: ['created at', 'created', 'วันที่สร้าง'],
+    website: ['website', 'website url', 'school website', 'เว็บไซต์'],
+    latitude: ['latitude', 'lat', 'ละติจูด'],
+    longitude: ['longitude', 'long', 'lng', 'ลองจิจูด'],
+    coordinates: ['coordinates', 'coordinate', 'map url', 'google maps', 'พิกัด', 'พิกัดสถานศึกษา', 'ที่ตั้งพิกัด']
+  };
+  const fallback = { schoolId: 0, name: 1, code: 2, district: 3, director: 4, phone: 5, email: 6, address: 7, active: 8, createdAt: 9, website: 10 };
+  const columns = {};
+  Object.keys(aliases).forEach(key => {
+    const found = headers.findIndex(header => aliases[key].includes(header));
+    columns[key] = found >= 0 ? found : (fallback[key] === undefined ? -1 : fallback[key]);
+  });
+  return columns;
+}
+
+function schoolValue_(row, columns, key) {
+  const index = columns[key];
+  return index >= 0 && index < row.length ? row[index] : '';
+}
+
+function isSchoolActive_(value) {
+  if (value === false || value === 0) return false;
+  return !['false', '0', 'inactive', 'ปิดใช้งาน', 'ไม่ใช้งาน'].includes(String(value || '').trim().toLowerCase());
+}
+
 function getSchools(data) {
   try {
     const rows = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
+    const columns = getSchoolColumns_(rows[0] || []);
     const schools = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row[0] || (!data?.includeInactive && row[7] === false)) continue;
+      const schoolId = schoolValue_(row, columns, 'schoolId');
+      if (!schoolId || (!data?.includeInactive && !isSchoolActive_(schoolValue_(row, columns, 'active')))) continue;
       schools.push({
         rowNumber: i + 1,
-        schoolId: row[0], name: row[1], code: row[2], district: row[3],
-        director: row[4], phone: row[5], email: row[6], active: row[7] !== false,
-        address: row[9] || '', website: row[10] || ''
+        schoolId: schoolId,
+        name: schoolValue_(row, columns, 'name'),
+        code: schoolValue_(row, columns, 'code'),
+        district: schoolValue_(row, columns, 'district'),
+        director: schoolValue_(row, columns, 'director'),
+        phone: schoolValue_(row, columns, 'phone'),
+        email: schoolValue_(row, columns, 'email'),
+        active: isSchoolActive_(schoolValue_(row, columns, 'active')),
+        address: schoolValue_(row, columns, 'address'),
+        website: schoolValue_(row, columns, 'website'),
+        latitude: schoolValue_(row, columns, 'latitude'),
+        longitude: schoolValue_(row, columns, 'longitude'),
+        coordinates: schoolValue_(row, columns, 'coordinates')
       });
     }
     schools.sort((a, b) => String(a.name).localeCompare(String(b.name), 'th'));
@@ -1191,14 +1247,17 @@ function getSchools(data) {
 function isActiveSchool(schoolId) {
   if (!schoolId) return false;
   const rows = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
-  return rows.slice(1).some(row => String(row[0]) === String(schoolId) && row[7] !== false);
+  const columns = getSchoolColumns_(rows[0] || []);
+  return rows.slice(1).some(row => String(schoolValue_(row, columns, 'schoolId')) === String(schoolId) && isSchoolActive_(schoolValue_(row, columns, 'active')));
 }
 
 function getSchoolNameMap_() {
   const rows = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
+  const columns = getSchoolColumns_(rows[0] || []);
   const names = {};
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0]) names[String(rows[i][0])] = rows[i][1] || '';
+    const schoolId = schoolValue_(rows[i], columns, 'schoolId');
+    if (schoolId) names[String(schoolId)] = schoolValue_(rows[i], columns, 'name');
   }
   return names;
 }
@@ -1210,11 +1269,15 @@ function createSchool(data) {
     if (!name || !code) return { success: false, message: 'กรุณาระบุชื่อโรงเรียนและรหัสโรงเรียน' };
     const sheet = getSheet(SHEETS.SCHOOLS);
     const rows = sheet.getDataRange().getValues();
-    if (rows.slice(1).some(row => String(row[2]).trim().toLowerCase() === code.toLowerCase())) {
+    const columns = getSchoolColumns_(rows[0] || []);
+    if (rows.slice(1).some(row => String(schoolValue_(row, columns, 'code')).trim().toLowerCase() === code.toLowerCase())) {
       return { success: false, message: 'รหัสโรงเรียนนี้มีอยู่แล้ว' };
     }
     const schoolId = generateId();
-    sheet.appendRow([schoolId, name, code, data.district || '', data.director || '', data.phone || '', data.email || '', true, formatDateTime(new Date()), data.address || '', data.website || '']);
+    const row = Array(sheet.getLastColumn()).fill('');
+    const values = { schoolId, name, code, district: data.district || '', director: data.director || '', phone: data.phone || '', email: data.email || '', address: data.address || '', active: true, createdAt: formatDateTime(new Date()), website: data.website || '' };
+    Object.keys(values).forEach(key => { if (columns[key] >= 0) row[columns[key]] = values[key]; });
+    sheet.appendRow(row);
     return { success: true, message: 'เพิ่มโรงเรียนสำเร็จ', schoolId };
   } catch (err) {
     return { success: false, message: err.toString() };
@@ -1228,14 +1291,15 @@ function updateSchool(data) {
     if (!Number.isInteger(rowNumber) || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
       return { success: false, message: 'ไม่พบข้อมูลโรงเรียน' };
     }
-    const row = sheet.getRange(rowNumber, 1, 1, 11).getValues()[0];
-    ['name', 'code', 'district', 'director', 'phone', 'email'].forEach((key, index) => {
-      if (data[key] !== undefined) row[index + 1] = String(data[key]).trim();
+    const lastColumn = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+    const columns = getSchoolColumns_(headers);
+    const row = sheet.getRange(rowNumber, 1, 1, lastColumn).getValues()[0];
+    ['name', 'code', 'district', 'director', 'phone', 'email', 'address', 'website'].forEach(key => {
+      if (data[key] !== undefined && columns[key] >= 0) row[columns[key]] = String(data[key]).trim();
     });
-    if (data.active !== undefined) row[7] = Boolean(data.active);
-    if (data.address !== undefined) row[9] = String(data.address).trim();
-    if (data.website !== undefined) row[10] = String(data.website).trim();
-    sheet.getRange(rowNumber, 1, 1, 11).setValues([row]);
+    if (data.active !== undefined && columns.active >= 0) row[columns.active] = Boolean(data.active);
+    sheet.getRange(rowNumber, 1, 1, lastColumn).setValues([row]);
     return { success: true, message: 'บันทึกข้อมูลโรงเรียนสำเร็จ' };
   } catch (err) {
     return { success: false, message: err.toString() };

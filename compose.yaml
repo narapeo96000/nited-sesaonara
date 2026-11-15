@@ -1,0 +1,9 @@
+services:
+  nited-test:
+    build:
+      context: .
+      dockerfile: docker-test/Dockerfile
+    container_name: nited-test
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

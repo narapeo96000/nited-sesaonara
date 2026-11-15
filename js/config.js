@@ -5,7 +5,9 @@
 const CONFIG = {
   // Google Apps Script Web App URL
   // แก้ไข URL นี้หลังจาก Deploy Apps Script เป็น Web App
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzr6Ar78mYnyAKZ_DlO4_WnQqwwFI0VNxZWkqtG4HxNiLy650wYMeVTzfRZqW89Ok3QPg/exec',
+  APPS_SCRIPT_URL: ['localhost', '127.0.0.1'].includes(location.hostname)
+    ? `${location.origin}/api`
+    : 'https://script.google.com/macros/s/AKfycbzr6Ar78mYnyAKZ_DlO4_WnQqwwFI0VNxZWkqtG4HxNiLy650wYMeVTzfRZqW89Ok3QPg/exec',
 
   // Google Sheets ID
   SPREADSHEET_ID: '1ojkushQJ6-ueIvmTwhxqOQbsYAXMzVNMKS-UcyKfAQ0',
