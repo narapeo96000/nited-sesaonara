@@ -13,7 +13,8 @@ const SHEETS = {
   FILES: 'Files',
   EVALUATION: 'Inspections',
   USERS: 'Users',
-  SCHOOLS: 'Schools'
+  SCHOOLS: 'Schools',
+  LOGFILES: 'logfiles'
 };
 
 const STATUS = {
@@ -92,11 +93,24 @@ function getPublicSchools_() {
 
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    const data = typeof e === 'string' ? JSON.parse(e) : JSON.parse(e.postData.contents);
     const action = data.action;
+    if (action === 'login') return jsonResponse(login(data));
+    if (action === 'logout') return jsonResponse(logout_(data));
+    const auth = authenticateRequest_(data);
+    if (!auth.success) return jsonResponse(auth);
+    data._user = auth.user;
+    if (auth.user.role === 'school') data.schoolId = auth.user.schoolId;
+    auditLog_(auth.user, action, 'request', 'รับคำขอ API');
+    if (!['admin','supervisor','school'].includes(String(auth.user.role || '').toLowerCase())) return jsonResponse({success:false,message:'บัญชีนี้ไม่มีสิทธิ์ใช้ระบบ'});
+    const supervisorActions = ['createEvaluation','updateEvaluation','deleteEvaluation'];
+    const adminActions = ['createSchool','createUser','updateFileStatus','deleteEvaluation','setSchoolPassword'];
+    if (supervisorActions.includes(action) && !isPrivileged_(auth.user)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
+    if (adminActions.includes(action) && !['admin','supervisor'].includes(auth.user.role)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
+    if (action === 'updateSchool' && !['admin','supervisor','school'].includes(auth.user.role)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
+    if (auth.user.role === 'school' && !['createBooking','updateBooking','deleteBooking','getBookings','getBookingById','uploadFile','getFiles','deleteFile','getEvaluations','getDashboardStats','getCalendarData','getReport','getTeacherReport','getDepartmentReport','getSchools','updateSchool'].includes(action)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
 
     switch (action) {
-      case 'login': return jsonResponse(login(data));
       case 'createBooking': return jsonResponse(createBooking(data));
       case 'updateBooking': return jsonResponse(updateBooking(data));
       case 'deleteBooking': return jsonResponse(deleteBooking(data));
@@ -116,13 +130,38 @@ function doPost(e) {
       case 'getTeacherReport': return jsonResponse(getTeacherReport(data));
       case 'getDepartmentReport': return jsonResponse(getDepartmentReport(data));
       case 'getSchools': return jsonResponse(getSchools(data));
+      case 'getTeachers': return jsonResponse(getTeachers());
       case 'createSchool': return jsonResponse(createSchool(data));
       case 'updateSchool': return jsonResponse(updateSchool(data));
+      case 'setSchoolPassword': return jsonResponse(setSchoolPassword_(data));
       default: return jsonResponse({ success: false, message: 'ไม่รู้จักคำสั่ง' });
     }
   } catch (err) {
     return jsonResponse({ success: false, message: err.toString() });
   }
+}
+
+function authenticateRequest_(data) {
+  const token = String(data.token || '');
+  if (!token) return {success:false,message:'กรุณาเข้าสู่ระบบใหม่',authRequired:true};
+  const raw = CacheService.getScriptCache().get('nited_session_' + token);
+  if (!raw) return {success:false,message:'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่',authRequired:true};
+  try { return {success:true,user:JSON.parse(raw)}; } catch (_) { return {success:false,message:'session ไม่ถูกต้อง',authRequired:true}; }
+}
+
+function isPrivileged_(user) { return ['admin','supervisor'].includes(String(user.role || '').toLowerCase()); }
+
+function auditLog_(user, action, result, details) {
+  try {
+    const sheet = getSheet(SHEETS.LOGFILES);
+    sheet.appendRow([formatDateTime(new Date()), safeLogCell_(user.username), safeLogCell_(user.role), safeLogCell_(user.schoolCode), safeLogCell_(action), safeLogCell_(result), safeLogCell_(details, 500)]);
+  } catch (err) { console.error('audit log failed: ' + err); }
+}
+
+function safeLogCell_(value, maxLength) {
+  let text = String(value == null ? '' : value).slice(0, maxLength || 200);
+  if (/^[=+\-@]/.test(text)) text = "'" + text;
+  return text;
 }
 
 function include(filename) {
@@ -155,7 +194,8 @@ function ensureSheetHeaders(sheet, name) {
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
     [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
-    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website']
+    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website', 'Password Hash'],
+    [SHEETS.LOGFILES]: ['Timestamp', 'Username', 'Role', 'School Code', 'Action', 'Result', 'Details']
   }[name];
   if (!headers) return;
 
@@ -176,7 +216,8 @@ function initializeSheet(sheet, name) {
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
     [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
-    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website']
+    [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Address', 'Active', 'Created At', 'Website', 'Password Hash'],
+    [SHEETS.LOGFILES]: ['Timestamp', 'Username', 'Role', 'School Code', 'Action', 'Result', 'Details']
   };
 
   if (headers[name]) {
@@ -231,43 +272,92 @@ function getSubFolder(name) {
 
 function login(data) {
   try {
-    const { username, password } = data;
+    const username = String(data.username || data.schoolCode || '').trim();
+    const password = String(data.password || '');
+    let user = null;
 
     const adminPassword = PropertiesService.getScriptProperties().getProperty(ADMIN_PASSWORD_PROPERTY);
     if (adminPassword && username === 'admin' && password === adminPassword) {
-      return {
-        success: true,
-        user: {
+      user = {
           username: 'admin',
           fullName: 'ผู้ดูแลระบบ',
           role: 'admin',
           department: 'ทั้งหมด'
-        }
       };
     }
 
-    const sheet = getSheet(SHEETS.USERS);
-    const rowData = sheet.getDataRange().getValues();
-
-    for (let i = 1; i < rowData.length; i++) {
-      if (rowData[i][0] === username && rowData[i][1] === password && rowData[i][5] !== false) {
-        return {
-          success: true,
-          user: {
-            username: rowData[i][0],
-            fullName: rowData[i][2],
-            role: rowData[i][3],
-          department: rowData[i][4],
-          schoolId: rowData[i][6] || ''
-          }
-        };
+    if (!user) {
+      const schools = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
+      const cols = getSchoolColumns_(schools[0] || []);
+      for (let i = 1; i < schools.length; i++) {
+        if (String(schoolValue_(schools[i], cols, 'code')).trim() !== username || !isSchoolActive_(schoolValue_(schools[i], cols, 'active'))) continue;
+        const storedHash = schoolValue_(schools[i], cols, 'passwordHash');
+        if (storedHash && verifySchoolPassword_(password, storedHash)) {
+          user = { username, fullName: schoolValue_(schools[i], cols, 'name'), role: 'school', schoolId: schoolValue_(schools[i], cols, 'schoolId'), schoolCode: username, schoolName: schoolValue_(schools[i], cols, 'name') };
+        }
+        break;
       }
     }
 
-    return { success: false, message: 'รหัสผ่านไม่ถูกต้อง' };
+    if (!user) {
+      const sheet = getSheet(SHEETS.USERS);
+      const rowData = sheet.getDataRange().getValues();
+      for (let i = 1; i < rowData.length; i++) {
+        if (String(rowData[i][0]) === username && String(rowData[i][1]) === password && rowData[i][5] !== false) {
+          user = { username: rowData[i][0], fullName: rowData[i][2], role: String(rowData[i][3] || '').toLowerCase(), department: rowData[i][4], schoolId: rowData[i][6] || '' };
+          break;
+        }
+      }
+    }
+    if (!user) {
+      auditLog_({username: username, role: 'unknown', schoolCode: ''}, 'login', 'failed', 'เข้าสู่ระบบไม่สำเร็จ');
+      return { success: false, message: 'รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+    }
+    const token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+    CacheService.getScriptCache().put('nited_session_' + token, JSON.stringify(user), 21600);
+    auditLog_(user, 'login', 'success', 'เข้าสู่ระบบ');
+    return { success: true, token, user };
   } catch (err) {
     return { success: false, message: err.toString() };
   }
+}
+
+function logout_(data) {
+  const token = String(data.token || '');
+  const raw = token ? CacheService.getScriptCache().get('nited_session_' + token) : '';
+  if (token) CacheService.getScriptCache().remove('nited_session_' + token);
+  if (raw) { try { auditLog_(JSON.parse(raw), 'logout', 'success', 'ออกจากระบบ'); } catch (_) {} }
+  return {success:true};
+}
+
+function hashSchoolPassword_(password, salt) {
+  const props = PropertiesService.getScriptProperties();
+  let secret = props.getProperty('NITED_SCHOOL_PASSWORD_SECRET');
+  if (!secret) { secret = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('NITED_SCHOOL_PASSWORD_SECRET', secret); }
+  const digest = Utilities.computeHmacSha256Signature(salt + ':' + password, secret, Utilities.Charset.UTF_8);
+  return 'v1$' + salt + '$' + Utilities.base64Encode(digest);
+}
+
+function verifySchoolPassword_(password, stored) {
+  const parts = String(stored || '').split('$');
+  return parts.length === 3 && parts[0] === 'v1' && hashSchoolPassword_(password, parts[1]) === stored;
+}
+
+function setSchoolPassword_(data) {
+  const password = String(data.password || '');
+  if (password.length < 8) return {success:false,message:'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'};
+  const sheet = getSheet(SHEETS.SCHOOLS);
+  const rows = sheet.getDataRange().getValues();
+  const cols = getSchoolColumns_(rows[0] || []);
+  const codeCol = cols.code, hashCol = cols.passwordHash;
+  if (hashCol == null) return {success:false,message:'ไม่พบคอลัมน์รหัสผ่านใน Schools'};
+  const targetCode = String(data.schoolCode || '').trim();
+  for (let i=1;i<rows.length;i++) if (String(rows[i][codeCol]).trim() === targetCode) {
+    const salt = Utilities.getUuid().replace(/-/g,'');
+    sheet.getRange(i+1, hashCol+1).setValue(hashSchoolPassword_(password, salt));
+    return {success:true,message:'ตั้งรหัสผ่านโรงเรียนสำเร็จ'};
+  }
+  return {success:false,message:'ไม่พบรหัสโรงเรียน'};
 }
 
 // ============================================================
@@ -281,13 +371,6 @@ function createBooking(data) {
     if (!isActiveSchool(data.schoolId)) {
       return { success: false, message: 'กรุณาเลือกโรงเรียนผู้รับการนิเทศที่อยู่ในสังกัด' };
     }
-    if (!data.supervisionType || !data.teachingDate || !data.topic) {
-      return { success: false, message: 'กรุณาระบุประเภทการนิเทศ วันที่จัดการเรียนรู้ และหัวข้อที่สอน' };
-    }
-    if (data.totalScore !== '' && data.totalScore != null && (isNaN(Number(data.totalScore)) || Number(data.totalScore) < 0)) {
-      return { success: false, message: 'คะแนนรวมต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' };
-    }
-
     const conflicting = checkBookingConflict(data.date, data.time, data.period, data.schoolId);
     if (conflicting) {
       return { success: false, message: 'วัน-เวลานี้มีการจองแล้ว กรุณาเลือกวัน-เวลาอื่น' };
@@ -344,6 +427,10 @@ function updateBooking(data) {
       return { success: false, message: 'ไม่พบรายการจอง' };
     }
 
+    const existingRow = sheet.getRange(rowNum, 1, 1, 13).getValues()[0];
+    if (data._user && data._user.role === 'school' && String(existingRow[12]) !== String(data._user.schoolId)) return {success:false,message:'ไม่มีสิทธิ์แก้ไขรายการนี้'};
+    if (data._user && data._user.role === 'school') { delete data.status; delete data.date; delete data.time; delete data.period; }
+
     const currentData = sheet.getRange(rowNum, 1, 1, 12).getValues()[0];
 
     if (data.status) currentData[10] = data.status;
@@ -363,6 +450,8 @@ function updateBooking(data) {
 function deleteBooking(data) {
   try {
     const sheet = getSheet(SHEETS.BOOKING);
+    const row = sheet.getRange(Number(data.rowNumber), 1, 1, 13).getValues()[0];
+    if (data._user && data._user.role === 'school' && String(row[12]) !== String(data._user.schoolId)) return {success:false,message:'ไม่มีสิทธิ์ลบรายการนี้'};
     sheet.deleteRow(data.rowNumber);
     return { success: true, message: 'ลบการจองสำเร็จ' };
   } catch (err) {
@@ -388,6 +477,7 @@ function getBookings(data) {
       row.bookingIndex = i;
 
       if (data && data.status && allData[i][10] !== data.status) continue;
+      if (data && data._user && data._user.role === 'school' && String(allData[i][12]) !== String(data._user.schoolId)) continue;
       if (data && data.teacherName && allData[i][3] !== data.teacherName) continue;
       if (data && data.date && allData[i][1] !== data.date) continue;
       if (data && data.department && allData[i][4] !== data.department) continue;
@@ -411,6 +501,7 @@ function getBookingById(data) {
 
     for (let i = 1; i < allData.length; i++) {
       if (i + 1 === data.rowNumber || allData[i][0] === data.bookingId) {
+        if (data._user && data._user.role === 'school' && String(allData[i][12]) !== String(data._user.schoolId)) return {success:false,message:'ไม่พบรายการจอง'};
         const row = {};
         row.rowNumber = i + 1;
         for (let j = 0; j < headers.length; j++) {
@@ -432,6 +523,7 @@ function getBookingById(data) {
 
 function uploadFile(data) {
   try {
+    if (data._user && data._user.role === 'school') data.schoolId = data._user.schoolId;
     const sheet = getSheet(SHEETS.FILES);
 
     const fileFolderMap = {
@@ -525,6 +617,7 @@ function getFiles(data) {
         row[headers[j]] = allData[i][j];
       }
       row['School Name'] = schoolNames[String(allData[i][11] || '')] || '';
+      if (data && data._user && data._user.role === 'school' && String(allData[i][11]) !== String(data._user.schoolId)) continue;
 
       if (data && data.status && allData[i][7] !== data.status) continue;
       if (data && data.teacherName && allData[i][1] !== data.teacherName) continue;
@@ -545,6 +638,8 @@ function getFiles(data) {
 function deleteFile(data) {
   try {
     const sheet = getSheet(SHEETS.FILES);
+    const row = sheet.getRange(Number(data.rowNumber), 1, 1, 12).getValues()[0];
+    if (data._user && data._user.role === 'school' && String(row[11]) !== String(data._user.schoolId)) return {success:false,message:'ไม่มีสิทธิ์ลบไฟล์นี้'};
 
     if (data.driveFileId) {
       try {
@@ -571,6 +666,8 @@ function createEvaluation(data) {
     if (!isActiveSchool(data.schoolId)) {
       return { success: false, message: 'กรุณาเลือกโรงเรียนผู้รับการนิเทศที่อยู่ในสังกัด' };
     }
+    if (!data.supervisionType || !data.teachingDate || !data.topic) return {success:false,message:'กรุณาระบุประเภทการนิเทศ วันที่จัดการเรียนรู้ และหัวข้อที่สอน'};
+    if (data.totalScore !== '' && data.totalScore != null && (isNaN(Number(data.totalScore)) || Number(data.totalScore) < 0)) return {success:false,message:'คะแนนรวมต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป'};
     const school = getSchools({}).schools.find(item => String(item.schoolId) === String(data.schoolId));
     const row = [formatDateTime(new Date()), data.supervisionType || '', data.supervisorName || '',
       school.name, school.code, data.teacherName || '', data.subjectGroup || '', data.subjectName || '',
@@ -625,8 +722,9 @@ function getEvaluations(data) {
         row[headers[j]] = allData[i][j];
       }
       row['School Name'] = row['School Name'] || '';
+      if (data && data._user && data._user.role === 'school' && String(row['School Code']) !== String(data._user.schoolCode)) continue;
       if (data && data.teacherName && row['Teacher Name'] !== data.teacherName) continue;
-      if (data && data.schoolId && row['School Code'] !== data.schoolId && row['School Name'] !== data.schoolId) continue;
+      if (data && data.schoolId && (!data._user || data._user.role !== 'school') && row['School Code'] !== data.schoolId && row['School Name'] !== data.schoolId) continue;
 
       evaluations.push(row);
     }
@@ -659,9 +757,14 @@ function getDashboardStats(data) {
     const fileSheet = getSheet(SHEETS.FILES);
     const evalSheet = getSheet(SHEETS.EVALUATION);
 
-    const bookingData = bookingSheet.getDataRange().getValues();
-    const fileData = fileSheet.getDataRange().getValues();
-    const evalData = evalSheet.getDataRange().getValues();
+    let bookingData = bookingSheet.getDataRange().getValues();
+    let fileData = fileSheet.getDataRange().getValues();
+    let evalData = evalSheet.getDataRange().getValues();
+    if (data && data._user && data._user.role === 'school') {
+      bookingData = [bookingData[0]].concat(bookingData.slice(1).filter(r => String(r[12]) === String(data._user.schoolId)));
+      fileData = [fileData[0]].concat(fileData.slice(1).filter(r => String(r[11]) === String(data._user.schoolId)));
+      evalData = [evalData[0]].concat(evalData.slice(1).filter(r => String(r[4]) === String(data._user.schoolCode)));
+    }
     const schoolNames = getSchoolNameMap_();
 
     const today = formatDate(new Date());
@@ -796,6 +899,7 @@ function getCalendarData(data) {
     const year = data.year || new Date().getFullYear();
 
     for (let i = 1; i < allData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(allData[i][12]) !== String(data._user.schoolId)) continue;
       const bookingDate = allData[i][1];
       if (!bookingDate) continue;
 
@@ -840,6 +944,7 @@ function getReport(data) {
 
     const bookingData = bookingSheet.getDataRange().getValues();
     for (let i = 1; i < bookingData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(bookingData[i][12]) !== String(data._user.schoolId)) continue;
       const d = bookingData[i][1];
       if (startDate && d < startDate) continue;
       if (endDate && d > endDate) continue;
@@ -856,6 +961,7 @@ function getReport(data) {
 
     const fileData = fileSheet.getDataRange().getValues();
     for (let i = 1; i < fileData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(fileData[i][11]) !== String(data._user.schoolId)) continue;
       report.files.push({
         timestamp: fileData[i][0],
         teacherName: fileData[i][1],
@@ -867,6 +973,7 @@ function getReport(data) {
 
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(evalData[i][4]) !== String(data._user.schoolCode)) continue;
       report.evaluations.push({
         teacherName: evalData[i][5],
         schoolName: evalData[i][3],
@@ -910,6 +1017,7 @@ function getTeacherReport(data) {
 
     const bookingData = bookingSheet.getDataRange().getValues();
     for (let i = 1; i < bookingData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(bookingData[i][12]) !== String(data._user.schoolId)) continue;
       if (bookingData[i][3] === teacherName) {
         report.bookings.push({
           date: bookingData[i][1],
@@ -922,6 +1030,7 @@ function getTeacherReport(data) {
 
     const fileData = fileSheet.getDataRange().getValues();
     for (let i = 1; i < fileData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(fileData[i][11]) !== String(data._user.schoolId)) continue;
       if (fileData[i][1] === teacherName) {
         report.files.push({
           fileType: fileData[i][3],
@@ -933,6 +1042,7 @@ function getTeacherReport(data) {
 
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(evalData[i][4]) !== String(data._user.schoolCode)) continue;
       if (evalData[i][5] === teacherName) {
         report.evaluations.push({
           supervisionDate: evalData[i][10],
@@ -974,6 +1084,7 @@ function getDepartmentReport(data) {
 
     const bookingData = bookingSheet.getDataRange().getValues();
     for (let i = 1; i < bookingData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(bookingData[i][12]) !== String(data._user.schoolId)) continue;
       if (bookingData[i][4] === department) {
         const teacher = bookingData[i][3];
         if (!report.teachers[teacher]) {
@@ -993,6 +1104,7 @@ function getDepartmentReport(data) {
 
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
+      if (data && data._user && data._user.role === 'school' && String(evalData[i][4]) !== String(data._user.schoolCode)) continue;
       const teacher = evalData[i][5];
       if (report.teachers[teacher]) {
         report.teachers[teacher].evaluations.push({
@@ -1188,6 +1300,7 @@ function getSchoolColumns_(headerRow) {
     active: ['active', 'status', 'สถานะ', 'ใช้งาน'],
     createdAt: ['created at', 'created', 'วันที่สร้าง'],
     website: ['website', 'website url', 'school website', 'เว็บไซต์'],
+    passwordHash: ['password hash', 'passwordhash'],
     latitude: ['latitude', 'lat', 'ละติจูด'],
     longitude: ['longitude', 'long', 'lng', 'ลองจิจูด'],
     coordinates: ['coordinates', 'coordinate', 'map url', 'google maps', 'พิกัด', 'พิกัดสถานศึกษา', 'ที่ตั้งพิกัด']
@@ -1219,6 +1332,7 @@ function getSchools(data) {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const schoolId = schoolValue_(row, columns, 'schoolId');
+      if (data && data._user && data._user.role === 'school' && String(schoolId) !== String(data._user.schoolId)) continue;
       if (!schoolId || (!data?.includeInactive && !isSchoolActive_(schoolValue_(row, columns, 'active')))) continue;
       schools.push({
         rowNumber: i + 1,
@@ -1295,10 +1409,13 @@ function updateSchool(data) {
     const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
     const columns = getSchoolColumns_(headers);
     const row = sheet.getRange(rowNumber, 1, 1, lastColumn).getValues()[0];
-    ['name', 'code', 'district', 'director', 'phone', 'email', 'address', 'website'].forEach(key => {
+    const isSchoolUser = data._user && data._user.role === 'school';
+    if (isSchoolUser && String(row[columns.schoolId]) !== String(data._user.schoolId)) return {success:false,message:'ไม่มีสิทธิ์แก้ไขข้อมูลโรงเรียนอื่น'};
+    const editableFields = isSchoolUser ? ['director','phone','email','address','website'] : ['name','code','district','director','phone','email','address','website'];
+    editableFields.forEach(key => {
       if (data[key] !== undefined && columns[key] >= 0) row[columns[key]] = String(data[key]).trim();
     });
-    if (data.active !== undefined && columns.active >= 0) row[columns.active] = Boolean(data.active);
+    if (!isSchoolUser && data.active !== undefined && columns.active >= 0) row[columns.active] = Boolean(data.active);
     sheet.getRange(rowNumber, 1, 1, lastColumn).setValues([row]);
     return { success: true, message: 'บันทึกข้อมูลโรงเรียนสำเร็จ' };
   } catch (err) {

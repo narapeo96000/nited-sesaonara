@@ -11,15 +11,14 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <a href="../index.html" class="navbar-brand">
-        <div class="logo">&#127891;</div>
-        <div><div class="brand-text">ระบบนิเทศสถานศึกษา</div><div class="brand-sub">สพม.นราธิวาส</div></div>
+        <div class="logo logo-image"><img src="https://www.sesaonara.go.th/wp-content/uploads/elementor/thumbs/smpnt-web-header3-pm81vc0p83fwfylect5mcnanbnw7ct0kusm9zvfjqe.png" alt="ตราสัญลักษณ์ สพม.นราธิวาส"></div>
+        <div><div class="brand-text">ระบบนิเทศออนไลน์</div><div class="brand-sub">สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</div></div>
       </a>
       <ul class="navbar-nav">
+        <li><a href="../index.html" data-page="home">&#127968; ระบบนิเทศสถานศึกษา</a></li>
         <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
-        <li><a href="../index.html" data-page="home">&#127968; หน้าหลัก</a></li>
-        <li><a href="booking.html" data-page="booking">&#128197; กำหนดการนิเทศ</a></li>
+        <li class="nav-dropdown"><a href="booking.html" data-page="booking">&#128197; กำหนดนิเทศ <span aria-hidden="true">⌄</span></a><ul class="nav-submenu"><li class="supervisor-only"><a href="evaluation.html" data-page="evaluation">&#128221; ทำแบบนิเทศ</a></li></ul></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
-        <li class="supervisor-only"><a href="evaluation.html" data-page="evaluation">&#11088; นิเทศ</a></li>
         <li><a href="reports.html" data-page="reports" class="active">&#128202; รายงานโรงเรียน</a></li>
         <li class="admin-only"><a href="admin.html" data-page="admin">&#9881; ผู้ดูแลระบบ</a></li>
       </ul>
@@ -122,6 +121,7 @@
       Promise.all([loadSchoolDirectory(), apiPost('getBookings', {}), apiPost('getFiles', {})])
         .then(function(results) {
           var schools = results[0] || [];
+          if (APP.user && APP.user.role === 'school') schools = schools.filter(function(school) { return String(school.schoolId) === String(APP.user.schoolId); });
           var bookings = results[1].bookings || [];
           var files = results[2].files || [];
           var tbody = document.getElementById('teacherStatsTable');
@@ -136,6 +136,7 @@
             option.textContent = school.name || 'ไม่ระบุชื่อโรงเรียน';
             filter.appendChild(option);
           });
+          if (APP.user && APP.user.role === 'school') { filter.value = String(APP.user.schoolId); filter.disabled = true; }
           tbody.innerHTML = schools.map(function(school) {
             var ownBookings = bookings.filter(function(row) { return String(row['School ID'] || '') === String(school.schoolId); });
             var completed = ownBookings.filter(function(row) { return row['Status'] === 'นิเทศแล้ว'; }).length;
@@ -160,3 +161,7 @@
   </script>
 </body>
 </html>
+
+
+
+

@@ -12,17 +12,17 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <a href="../index.html" class="navbar-brand">
-        <div class="logo">&#127891;</div>
+        <div class="logo logo-image"><img src="https://www.sesaonara.go.th/wp-content/uploads/elementor/thumbs/smpnt-web-header3-pm81vc0p83fwfylect5mcnanbnw7ct0kusm9zvfjqe.png" alt="ตราสัญลักษณ์ สพม.นราธิวาส"></div>
         <div>
-          <div class="brand-text">ระบบนิเทศสถานศึกษา</div>
-          <div class="brand-sub">สพม.นราธิวาส</div>
+          <div class="brand-text">ระบบนิเทศออนไลน์</div>
+          <div class="brand-sub">สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</div>
         </div>
       </a>
       <ul class="navbar-nav">
-        <li><a href="../index.html" data-page="dashboard">&#127968; หน้าหลัก</a></li>
-        <li><a href="booking.html" data-page="booking">&#128197; กำหนดการนิเทศ</a></li>
+        <li><a href="../index.html" data-page="home">&#127968; ระบบนิเทศสถานศึกษา</a></li>
+        <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
+        <li class="nav-dropdown"><a href="booking.html" data-page="booking">&#128197; กำหนดนิเทศ <span aria-hidden="true">⌄</span></a><ul class="nav-submenu"><li class="supervisor-only"><a href="evaluation.html" data-page="evaluation">&#128221; ทำแบบนิเทศ</a></li></ul></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
-        <li class="supervisor-only"><a href="evaluation.html" data-page="evaluation">&#11088; นิเทศ</a></li>
         <li><a href="reports.html" data-page="reports">&#128202; รายงานโรงเรียน</a></li>
         <li class="admin-only"><a href="admin.html" data-page="admin" class="active">&#9881; ผู้ดูแลระบบ</a></li>
       </ul>
@@ -39,13 +39,13 @@
   <div class="main-content">
     <div class="page-header">
       <h1>&#9881; ผู้ดูแลระบบ</h1>
-      <p>บริหารกำหนดการนิเทศ โรงเรียนในสังกัด หลักฐาน และผลการติดตามของ สพม.นราธิวาส</p>
+      <p>บริหารกำหนดนิเทศ โรงเรียนในสังกัด หลักฐาน และผลการติดตามของ สพม.นราธิวาส</p>
     </div>
 
     <!-- Tabs -->
     <div data-tab-group="adminTab">
       <div class="tabs">
-        <button class="tab-btn active" data-tab="manageBooking" onclick="switchTab('adminTab', 'manageBooking')">&#128197; กำหนดการนิเทศ</button>
+        <button class="tab-btn active" data-tab="manageBooking" onclick="switchTab('adminTab', 'manageBooking')">&#128197; กำหนดนิเทศ</button>
         <button class="tab-btn" data-tab="manageSchools" onclick="switchTab('adminTab', 'manageSchools'); loadSchools()">&#127979; จัดการโรงเรียน</button>
         <button class="tab-btn" data-tab="checkFiles" onclick="switchTab('adminTab', 'checkFiles')">&#128194; ตรวจผลงาน</button>
         <button class="tab-btn" data-tab="manageEval" onclick="switchTab('adminTab', 'manageEval')">&#11088; จัดการประเมิน</button>
@@ -843,9 +843,17 @@
       apiPost('getSchools', { includeInactive: true }).then(result => {
         if (!result.success) throw new Error(result.message || 'โหลดรายชื่อโรงเรียนไม่สำเร็จ');
         target.innerHTML = result.schools.length
-          ? '<div class="table-responsive"><table><thead><tr><th>รหัส</th><th>โรงเรียน</th><th>อำเภอ</th><th>สถานะ</th></tr></thead><tbody>' + result.schools.map(s => '<tr><td>' + escapeHtml(s.code) + '</td><td>' + escapeHtml(s.name) + '</td><td>' + escapeHtml(s.district || '-') + '</td><td>' + (s.active ? 'ใช้งาน' : 'ปิดใช้งาน') + '</td></tr>').join('') + '</tbody></table></div>'
+          ? '<div class="table-responsive"><table><thead><tr><th>รหัส</th><th>โรงเรียน</th><th>อำเภอ</th><th>สถานะ</th><th>บัญชีเข้าใช้</th></tr></thead><tbody>' + result.schools.map(s => '<tr><td>' + escapeHtml(s.code) + '</td><td>' + escapeHtml(s.name) + '</td><td>' + escapeHtml(s.district || '-') + '</td><td>' + (s.active ? 'ใช้งาน' : 'ปิดใช้งาน') + '</td><td><button class="btn btn-sm btn-outline" data-school-code="' + escapeHtml(s.code) + '" onclick="promptSchoolPassword(this.dataset.schoolCode)">ตั้งรหัสผ่าน</button></td></tr>').join('') + '</tbody></table></div>'
           : '<div class="empty-state"><div class="icon">&#127979;</div><h4>ยังไม่มีโรงเรียน</h4><p>เพิ่มโรงเรียนที่สังกัดในแบบฟอร์ม</p></div>';
       }).catch(error => { target.innerHTML = '<div class="empty-state"><p>' + escapeHtml(error.message) + '</p></div>'; });
+    }
+
+    function promptSchoolPassword(schoolCode) {
+      const password = window.prompt('กำหนดรหัสผ่านใหม่ให้โรงเรียนรหัส ' + schoolCode + ' (อย่างน้อย 8 ตัวอักษร)');
+      if (password === null) return;
+      apiPost('setSchoolPassword', { schoolCode, password }).then(result => {
+        showToast(result.message || (result.success ? 'ตั้งรหัสผ่านแล้ว' : 'ตั้งรหัสผ่านไม่สำเร็จ'), result.success ? 'success' : 'error');
+      }).catch(error => showToast(error.message || 'ตั้งรหัสผ่านไม่สำเร็จ', 'error'));
     }
 
     function saveSchool(event) {
@@ -878,3 +886,7 @@
   </script>
 </body>
 </html>
+
+
+
+

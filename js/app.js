@@ -10,27 +10,51 @@ const APP = {
   isGas: typeof google !== 'undefined' && typeof google.script !== 'undefined'
 };
 
+if (document.body && !document.querySelector('.copyright-footer')) {
+  const copyright = document.createElement('footer');
+  copyright.className = 'copyright-footer';
+  copyright.textContent = '© Kru.POP.ICT-ศน.ป๊อบ';
+  document.body.appendChild(copyright);
+}
+
+document.querySelectorAll('.logo-image img, .login-brand .logo img').forEach(image => {
+  image.onerror = function () {
+    const mark = document.createElement('span');
+    mark.className = 'logo-fallback';
+    mark.textContent = 'น';
+    this.replaceWith(mark);
+  };
+});
+
 // ============================================================
 // API Layer - รองรับทั้ง Google Apps Script และ GitHub Pages
 // ============================================================
 
 function apiPost(action, data) {
+  const savedUser = (() => { try { return JSON.parse(localStorage.getItem('nited_user') || 'null'); } catch (_) { return null; } })();
+  const payload = { action, ...(data || {}), ...(savedUser && savedUser.token ? { token: savedUser.token } : {}) };
   return new Promise((resolve, reject) => {
     if (APP.isGas) {
       google.script.run
         .withSuccessHandler(resolve)
         .withFailureHandler(reject)
-        .doPost(JSON.stringify({ action, ...data }));
+        .doPost(JSON.stringify(payload));
     } else {
       fetch(CONFIG.APPS_SCRIPT_URL, {
         method: 'POST',
         mode: 'cors',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action, ...data })
+        body: JSON.stringify(payload)
       })
       .then(r => r.json())
-      .then(resolve)
+      .then(result => {
+        if (result && result.authRequired) {
+          localStorage.removeItem('nited_user');
+          if (!/login\.html$/.test(location.pathname)) location.href = location.pathname.includes('/pages/') ? 'login.html' : 'pages/login.html';
+        }
+        resolve(result);
+      })
       .catch(reject);
     }
   });
@@ -64,6 +88,10 @@ function checkAuth() {
   const saved = localStorage.getItem('nited_user');
   if (saved) {
     APP.user = JSON.parse(saved);
+    if (!APP.user.token) { localStorage.removeItem('nited_user'); return false; }
+    const currentPage = location.pathname.split('/').pop().toLowerCase();
+    const role = String(APP.user.role || '').toLowerCase();
+    if (role === 'school' && ['admin.html','evaluation.html'].includes(currentPage)) { location.href = 'dashboard.html'; return false; }
     updateUserUI();
     return true;
   }
@@ -92,8 +120,8 @@ function handleLogin() {
   login(username, password)
     .then(result => {
       if (result.success) {
-        APP.user = result.user;
-        localStorage.setItem('nited_user', JSON.stringify(result.user));
+        APP.user = { ...result.user, token: result.token };
+        localStorage.setItem('nited_user', JSON.stringify(APP.user));
         window.location.href = 'dashboard.html';
       } else {
         errorEl.textContent = result.message;
@@ -111,6 +139,7 @@ function handleLogin() {
 }
 
 function logout() {
+  apiPost('logout', {}).catch(() => {});
   APP.user = null;
   localStorage.removeItem('nited_user');
   window.location.href = '../index.html';
@@ -124,11 +153,12 @@ function updateUserUI() {
   if (roleEl && APP.user) roleEl.textContent = role === 'admin' ? 'ผู้ดูแลระบบ' : APP.user.role;
 
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = role === 'admin' ? '' : 'none';
+    el.style.display = ['admin','supervisor'].includes(role) ? '' : 'none';
   });
   document.querySelectorAll('.supervisor-only').forEach(el => {
-    el.style.display = role === 'supervisor' ? '' : 'none';
+    el.style.display = ['admin','supervisor'].includes(role) ? '' : 'none';
   });
+  document.querySelectorAll('.school-only').forEach(el => { el.style.display = role === 'school' ? '' : 'none'; });
 }
 
 // ============================================================

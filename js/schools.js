@@ -50,6 +50,10 @@ function populateSchoolDropdown(target, placeholder, selectedId) {
   if (!select) return Promise.reject(new Error('ไม่พบ dropdown โรงเรียน'));
 
   return loadSchoolDirectory().then(schools => {
+    const activeUser = typeof APP !== 'undefined' ? APP.user : null;
+    const visibleSchools = activeUser && activeUser.role === 'school'
+      ? schools.filter(school => String(school.schoolId) === String(activeUser.schoolId))
+      : schools;
     const selected = selectedId || select.value;
     select.replaceChildren();
 
@@ -58,7 +62,7 @@ function populateSchoolDropdown(target, placeholder, selectedId) {
     first.textContent = placeholder || '-- เลือกโรงเรียน --';
     select.appendChild(first);
 
-    schools.forEach(school => {
+    visibleSchools.forEach(school => {
       const option = document.createElement('option');
       option.value = school.schoolId;
       option.textContent = school.name || 'ไม่ระบุชื่อโรงเรียน';
@@ -69,6 +73,7 @@ function populateSchoolDropdown(target, placeholder, selectedId) {
     });
 
     if (selected) select.value = selected;
-    return schools;
+    if (activeUser && activeUser.role === 'school') select.disabled = true;
+    return visibleSchools;
   });
 }
