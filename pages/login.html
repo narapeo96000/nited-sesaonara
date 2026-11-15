@@ -23,7 +23,8 @@
       </form>
       <div style="text-align:right;margin-top:12px;"><button type="button" class="login-link" id="forgotPasswordLink" onclick="showForgotPassword()">ลืมรหัสผ่าน?</button></div>
       <div id="forgotPasswordPanel" style="display:none;margin-top:14px;padding:14px;background:#f3f7fa;border-radius:10px;">
-        <div class="form-group"><label for="resetEmail">อีเมลที่ระบุไว้ในระบบ</label><input id="resetEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+        <div class="form-group"><label for="resetSchoolCode">รหัสโรงเรียน (School Code)</label><input id="resetSchoolCode" inputmode="numeric" autocomplete="off" placeholder="กรอกรหัสโรงเรียน"></div>
+        <div class="form-group"><label for="resetEmail">อีเมลที่ระบุไว้ในชีต Schools</label><input id="resetEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
         <button type="button" class="btn btn-outline login-secondary" id="sendResetButton" onclick="requestPasswordReset()">ส่งรหัสผ่านชั่วคราว</button>
         <div id="resetMessage" class="login-message" role="status" aria-live="polite"></div>
       </div>
@@ -46,7 +47,7 @@
     function showForgotPassword() {
       const panel = document.getElementById('forgotPasswordPanel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      if (panel.style.display === 'block') document.getElementById('resetEmail').focus();
+      if (panel.style.display === 'block') document.getElementById('resetSchoolCode').focus();
     }
 
     function showRequiredPasswordChange() {
@@ -60,14 +61,15 @@
     }
 
     function requestPasswordReset() {
+      const schoolCode = document.getElementById('resetSchoolCode').value.trim();
       const email = document.getElementById('resetEmail').value.trim();
       const message = document.getElementById('resetMessage');
       const button = document.getElementById('sendResetButton');
-      if (!email) { message.textContent = 'กรุณากรอกอีเมล'; message.className = 'login-message error'; return; }
+      if (!schoolCode || !email) { message.textContent = 'กรุณากรอกรหัสโรงเรียนและอีเมล'; message.className = 'login-message error'; return; }
       button.disabled = true;
       message.textContent = 'กำลังส่งคำขอ...';
       message.className = 'login-message';
-      apiPost('forgotPassword', {email})
+      apiPost('forgotPassword', {schoolCode, email})
         .then(result => {
           message.textContent = result.message || 'หากอีเมลนี้ตรงกับบัญชีในระบบ ระบบจะส่งรหัสผ่านชั่วคราวให้';
           message.className = 'login-message' + (result.success ? '' : ' error');
