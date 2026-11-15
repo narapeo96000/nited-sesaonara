@@ -19,7 +19,6 @@
         </div>
       </a>
       <ul class="navbar-nav">
-        <li><a href="../index.html" data-page="home">&#127968; ระบบนิเทศสถานศึกษา</a></li>
         <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
         <li class="nav-dropdown"><a href="booking.html" data-page="booking">&#128197; กำหนดนิเทศ <span aria-hidden="true">⌄</span></a><ul class="nav-submenu"><li class="supervisor-only"><a href="evaluation.html" data-page="evaluation">&#128221; ทำแบบนิเทศ</a></li></ul></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
@@ -314,79 +313,6 @@
   <script src="../js/app.js"></script>
   <script>
     if (!checkAuth()) { window.location.href = 'login.html'; }
-    var currentReviewFile = null;
-    var DEPARTMENTS = ['คณิตศาสตร์','วิทยาศาสตร์','ภาษาไทย','ภาษาอังกฤษ','สังคมศึกษา','พลศึกษา','ศิลปะ','การงานอาชีพ','เทคโนโลยี'];
-
-    function initAdmin() {
-      var ds = document.getElementById('reportDept');
-      DEPARTMENTS.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
-      apiPost('getTeachers',{}).then(function(r){if(r.success&&r.teachers){var s=document.getElementById('reportTeacher');r.teachers.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;s.appendChild(o);});}}).catch(function(e){console.error(e);});
-    }
-
-    function loadAdminBookings() {
-      var st=document.getElementById('adminFilterStatus').value;
-      var d=st?{status:st}:{};
-      apiPost('getBookings',d).then(function(result){
-        var tbody=document.getElementById('adminBookingsTable');
-        if(result.success&&result.bookings.length>0){
-          tbody.innerHTML=result.bookings.map(function(b,i){
-            var acts='';
-            if(b['Status']==='รอดำเนินการ'){acts='<button class="btn btn-sm btn-success" onclick="confirmBooking('+b.rowNumber+')">&#9989;</button> <button class="btn btn-sm btn-danger" onclick="rejectBooking('+b.rowNumber+')">&#10007;</button> ';}
-            acts+='<button class="btn btn-sm btn-warning" onclick="openEditBooking('+b.rowNumber+')">&#9998;</button> <button class="btn btn-sm btn-danger" onclick="deleteBookingConfirm('+b.rowNumber+')">&#128465;</button>';
-            return '<tr><td>'+(i+1)+'</td><td>'+formatDate(b['Date'])+'</td><td>'+escapeHtml(b['Time'])+'</td><td>'+escapeHtml(b['Teacher Name'])+'</td><td>'+escapeHtml(b['Department'])+'</td><td>'+escapeHtml(b['Subject Name'])+'</td><td>'+getStatusBadge(b['Status'])+'</td><td><div class="btn-group">'+acts+'</div></td></tr>';
-          }).join('');
-        } else { tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="icon">&#128197;</div><h4>ไม่มีรายการจอง</h4></div></td></tr>'; }
-      }).catch(function(e){console.error(e);});
-    }
-
-    function confirmBooking(rn){if(!confirm('ยืนยันการจองนี้?'))return;apiPost('updateBooking',{rowNumber:rn,status:'ยืนยันแล้ว'}).then(function(r){if(r.success){showToast('ยืนยันสำเร็จ','success');loadAdminBookings();}else showToast(r.message,'error');});}
-    function rejectBooking(rn){if(!confirm('ปฏิเสธการจองนี้?'))return;apiPost('updateBooking',{rowNumber:rn,status:'ปฏิเสธ'}).then(function(r){if(r.success){showToast('ปฏิเสธแล้ว','warning');loadAdminBookings();}else showToast(r.message,'error');});}
-    function deleteBookingConfirm(rn){if(!confirm('ต้องการลบการจองนี้?'))return;apiPost('deleteBooking',{rowNumber:rn}).then(function(r){if(r.success){showToast('ลบสำเร็จ','success');loadAdminBookings();}else showToast(r.message,'error');});}
-    function openEditBooking(rn){document.getElementById('editBookingRow').value=rn;openModal('editBookingModal');}
-    function saveBookingEdit(){var rn=parseInt(document.getElementById('editBookingRow').value);apiPost('updateBooking',{rowNumber:rn,status:document.getElementById('editBookingStatus').value,date:document.getElementById('editBookingDate').value,notes:document.getElementById('editBookingNotes').value}).then(function(r){if(r.success){showToast('บันทึกสำเร็จ','success');closeModal('editBookingModal');loadAdminBookings();}else showToast(r.message,'error');});}
-
-    function loadAdminFiles() {
-      var st=document.getElementById('adminFilterFileStatus').value;
-      var d=st?{status:st}:{};
-      apiPost('getFiles',d).then(function(result){
-        var tbody=document.getElementById('adminFilesTable');
-        if(result.success&&result.files.length>0){
-          tbody.innerHTML=result.files.map(function(f,i){
-            return '<tr><td>'+(i+1)+'</td><td>'+formatDateTime(f['Timestamp'])+'</td><td>'+escapeHtml(f['Teacher Name'])+'</td><td>'+getFileTypeIcon(f['File Type'])+' '+escapeHtml(f['File Type'])+'</td><td>'+escapeHtml(f['File Name'])+'</td><td>'+getStatusBadge(f['Status'])+'</td><td>'+(f['File URL']?'<a href="'+f['File URL']+'" target="_blank" class="btn btn-sm btn-info">&#128279;</a>':'-')+'</td><td><div class="btn-group"><button class="btn btn-sm btn-success" onclick="openReviewFile('+f.rowNumber+')">&#9989;</button> <button class="btn btn-sm btn-danger" onclick="deleteFileConfirm('+f.rowNumber+')">&#128465;</button></div></td></tr>';
-          }).join('');
-        } else { tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="icon">&#128194;</div><h4>ไม่มีไฟล์งาน</h4></div></td></tr>'; }
-      }).catch(function(e){console.error(e);});
-    }
-
-    function openReviewFile(rn){currentReviewFile=rn;document.getElementById('reviewNote').value='';openModal('reviewFileModal');}
-    function reviewFile(status){if(!currentReviewFile)return;apiPost('updateFileStatus',{rowNumber:currentReviewFile,status:status,adminNote:document.getElementById('reviewNote').value,reviewedBy:APP.user.fullName}).then(function(r){if(r.success){showToast(status==='ผ่าน'?'อนุมัติสำเร็จ':'ขอแก้ไขแล้ว','success');closeModal('reviewFileModal');loadAdminFiles();}else showToast(r.message,'error');});}
-    function deleteFileConfirm(rn){if(!confirm('ต้องการลบไฟล์นี้?'))return;apiPost('deleteFile',{rowNumber:rn}).then(function(r){if(r.success){showToast('ลบสำเร็จ','success');loadAdminFiles();}else showToast(r.message,'error');});}
-
-    function loadAdminEvaluations() {
-      apiPost('getEvaluations',{}).then(function(result){
-        var tbody=document.getElementById('adminEvalTable');
-        if(result.success&&result.evaluations.length>0){
-          tbody.innerHTML=result.evaluations.map(function(e,i){
-            return '<tr><td>'+(i+1)+'</td><td>'+formatDateTime(e['Timestamp'])+'</td><td>'+escapeHtml(e['Teacher Name'])+'</td><td>'+formatDate(e['Supervision Date'])+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escapeHtml(e['Strengths'])+'">'+escapeHtml(e['Strengths'])+'</td><td>'+getStatusBadge(e['Quality Level'])+'</td><td>'+escapeHtml(e['Evaluated By']||'-')+'</td><td><button class="btn btn-sm btn-danger" onclick="deleteEvalConfirm('+e.rowNumber+')">&#128465;</button></td></tr>';
-          }).join('');
-        } else { tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="icon">&#11088;</div><h4>ไม่มีผลประเมิน</h4></div></td></tr>'; }
-      }).catch(function(e){console.error(e);});
-    }
-
-    function deleteEvalConfirm(rn){if(!confirm('ต้องการลบผลประเมินนี้?'))return;apiPost('deleteEvaluation',{rowNumber:rn}).then(function(r){if(r.success){showToast('ลบสำเร็จ','success');loadAdminEvaluations();}else showToast(r.message,'error');});}
-
-    function printIndividualReport(){var t=document.getElementById('reportTeacher').value;if(!t){showToast('กรุณาเลือกครู','error');return;}apiPost('getTeacherReport',{teacherName:t}).then(function(r){if(!r.success)return;var rp=r.report;var c='<p><strong>ครู:</strong> '+escapeHtml(t)+'</p><p>จอง: '+rp.summary.totalBookings+' นิเทศแล้ว: '+rp.summary.completedBookings+' ไฟล์: '+rp.summary.totalFiles+' ประเมิน: '+rp.summary.totalEvaluations+'</p><h3 style="color:#1a5276;">ประวัติการนิเทศ</h3><table><thead><tr><th>วันที่</th><th>วิชา</th><th>สถานะ</th></tr></thead><tbody>';rp.bookings.forEach(function(b){c+='<tr><td>'+formatDate(b.date)+'</td><td>'+escapeHtml(b.subjectName)+'</td><td>'+getStatusBadge(b.status)+'</td></tr>';});c+='</tbody></table>';printReport('รายงานรายบุคคล - '+escapeHtml(t),c);});}
-
-    function printDeptReport(){var d=document.getElementById('reportDept').value;if(!d){showToast('กรุณาเลือกกลุ่มสาระ','error');return;}apiPost('getDepartmentReport',{department:d}).then(function(r){if(!r.success)return;var rp=r.report;var c='<p><strong>กลุ่มสาระ:</strong> '+escapeHtml(d)+'</p><p>ครู: '+rp.summary.totalTeachers+' คน</p><table><thead><tr><th>ชื่อครู</th><th>การจอง</th><th>นิเทศแล้ว</th></tr></thead><tbody>';Object.entries(rp.teachers).forEach(function(e){c+='<tr><td>'+escapeHtml(e[0])+'</td><td>'+e[1].totalBookings+'</td><td>'+e[1].completedBookings+'</td></tr>';});c+='</tbody></table>';printReport('รายงานกลุ่มสาระ - '+escapeHtml(d),c);});}
-
-    function printGeneralReport(){var sd=document.getElementById('reportStartDate').value;var ed=document.getElementById('reportEndDate').value;apiPost('getReport',{startDate:sd,endDate:ed}).then(function(r){if(!r.success)return;var rp=r.report;var c='<p>ช่วง: '+(sd?formatDate(sd):'ทั้งหมด')+' - '+(ed?formatDate(ed):'ทั้งหมด')+'</p><table><thead><tr><th>วันที่</th><th>ครู</th><th>วิชา</th><th>สถานะ</th></tr></thead><tbody>';rp.bookings.forEach(function(b){c+='<tr><td>'+formatDate(b.date)+'</td><td>'+escapeHtml(b.teacherName)+'</td><td>'+escapeHtml(b.subjectName)+'</td><td>'+getStatusBadge(b.status)+'</td></tr>';});c+='</tbody></table>';printReport('รายงานสรุปภาพรวม',c);});}
-
-    function showQuickStats(type){apiPost('getDashboardStats',{}).then(function(r){if(!r.success)return;var s=r.stats;var c='';if(type==='bookings'){c='<h3>สถิติการจอง</h3><table><thead><tr><th>สถานะ</th><th>จำนวน</th></tr></thead><tbody><tr><td>รอดำเนินการ</td><td>'+s.pendingBookings+'</td></tr><tr><td>ยืนยันแล้ว</td><td>'+s.confirmedBookings+'</td></tr><tr><td>นิเทศแล้ว</td><td>'+s.completedBookings+'</td></tr><tr><td>ปฏิเสธ</td><td>'+s.rejectedBookings+'</td></tr><tr><td><strong>รวม</strong></td><td><strong>'+s.totalBookings+'</strong></td></tr></tbody></table>';}else if(type==='files'){c='<h3>สถิติไฟล์งาน</h3><table><thead><tr><th>สถานะ</th><th>จำนวน</th></tr></thead><tbody><tr><td>รอตรวจสอบ</td><td>'+s.pendingFiles+'</td></tr><tr><td>ผ่าน</td><td>'+s.approvedFiles+'</td></tr><tr><td>ขอแก้ไข</td><td>'+s.reviseFiles+'</td></tr><tr><td><strong>รวม</strong></td><td><strong>'+s.totalFiles+'</strong></td></tr></tbody></table>';}else if(type==='evaluations'){c='<h3>สถิติการประเมิน</h3><table><thead><tr><th>ระดับ</th><th>จำนวน</th></tr></thead><tbody><tr><td>ดีมาก</td><td>'+s.excellentCount+'</td></tr><tr><td>ดี</td><td>'+s.goodCount+'</td></tr><tr><td>พอใช้</td><td>'+s.fairCount+'</td></tr><tr><td>ปรับปรุง</td><td>'+s.poorCount+'</td></tr><tr><td><strong>รวม</strong></td><td><strong>'+s.totalEvaluations+'</strong></td></tr></tbody></table>';}printReport('สถิติด่วน',c);});}
-
-    updateUserUI();initAdmin();loadAdminBookings();loadAdminFiles();loadAdminEvaluations();
-  </script>
-    }
-
     let currentReviewFile = null;
 
     const DEPARTMENTS = [
@@ -886,6 +812,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
