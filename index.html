@@ -56,7 +56,10 @@
     <section class="directory" id="schools">
       <div class="directory-inner">
         <div class="directory-heading"><div><span class="eyebrow dark">ทำเนียบสถานศึกษา</span><h2>โรงเรียนมัธยมศึกษาในสังกัด</h2><p>ค้นหาชื่อโรงเรียน รหัส อำเภอ และที่ตั้งสถานศึกษาจากข้อมูลในชีต Schools</p></div><div class="school-count"><strong id="schoolCount">—</strong><span>โรงเรียน</span></div></div>
-        <label class="search-box"><span aria-hidden="true">⌕</span><input id="schoolSearch" type="search" placeholder="ค้นหาชื่อโรงเรียนหรืออำเภอ" autocomplete="off"><kbd>ค้นหา</kbd></label>
+        <div class="directory-controls">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="schoolSearch" type="search" placeholder="ค้นหาชื่อโรงเรียนหรืออำเภอ" autocomplete="off"><kbd>ค้นหา</kbd></label>
+          <label class="school-filter"><span>เลือกโรงเรียน</span><select id="schoolFilter"><option value="">ทุกโรงเรียน</option></select></label>
+        </div>
         <div id="schoolList" class="school-grid" aria-live="polite"><div class="directory-state">กำลังโหลดรายชื่อโรงเรียน…</div></div>
         <p class="directory-footnote" id="directoryStatus"></p>
       </div>
@@ -67,6 +70,7 @@
 
   <footer><a class="brand footer-brand" href="index.html"><span class="brand-mark">น</span><span><b>ระบบนิเทศออนไลน์</b><small>สพม.นราธิวาส</small></span></a><span>© <span id="year"></span> สำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</span></footer>
   <script src="js/config.js"></script>
+  <script src="js/schools.js"></script>
   <script src="js/home.js"></script>
 </body>
 </html>

@@ -19,7 +19,8 @@
         </div>
       </a>
       <ul class="navbar-nav">
-        <li><a href="../index.html" data-page="dashboard">&#127968; หน้าหลัก</a></li>
+        <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
+        <li><a href="../index.html" data-page="home">&#127968; หน้าหลัก</a></li>
         <li><a href="booking.html" data-page="booking" class="active">&#128197; กำหนดการนิเทศ</a></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
         <li><a href="evaluation.html" data-page="evaluation">&#11088; ผลนิเทศ</a></li>
@@ -164,6 +165,7 @@
   </div>
 
   <script src="../js/config.js"></script>
+  <script src="../js/schools.js"></script>
   <script src="../js/app.js"></script>
   <script>
     if (!checkAuth()) {
@@ -194,17 +196,7 @@
       const minDate = today.toISOString().split('T')[0];
       document.getElementById('bookDate').min = minDate;
 
-      apiPost('getSchools', {}).then(result => {
-        if (!result.success) return;
-        const schoolSelect = document.getElementById('bookSchool');
-        result.schools.forEach(school => {
-          const option = document.createElement('option');
-          option.value = school.schoolId;
-          option.textContent = school.name;
-          schoolSelect.appendChild(option);
-        });
-        if (APP.user && APP.user.schoolId) schoolSelect.value = APP.user.schoolId;
-      }).catch(console.error);
+      populateSchoolDropdown('bookSchool', '-- เลือกโรงเรียน --', APP.user && APP.user.schoolId).catch(console.error);
 
       const timeSelect = document.getElementById('bookTime');
       TIME_SLOTS.forEach(s => {

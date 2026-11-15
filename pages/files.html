@@ -19,7 +19,8 @@
         </div>
       </a>
       <ul class="navbar-nav">
-        <li><a href="../index.html" data-page="dashboard">&#127968; หน้าหลัก</a></li>
+        <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
+        <li><a href="../index.html" data-page="home">&#127968; หน้าหลัก</a></li>
         <li><a href="booking.html" data-page="booking">&#128197; กำหนดการนิเทศ</a></li>
         <li><a href="files.html" data-page="files" class="active">&#128194; หลักฐานโรงเรียน</a></li>
         <li><a href="evaluation.html" data-page="evaluation">&#11088; ผลนิเทศ</a></li>
@@ -219,6 +220,7 @@
   </div>
 
   <script src="../js/config.js"></script>
+  <script src="../js/schools.js"></script>
   <script src="../js/app.js"></script>
   <script>
     if (!checkAuth()) {
@@ -433,17 +435,7 @@
     }
 
     // Init
-    apiPost('getSchools', {}).then(function(result) {
-      if (!result.success) return;
-      var select = document.getElementById('fileSchool');
-      result.schools.forEach(function(school) {
-        var option = document.createElement('option');
-        option.value = school.schoolId;
-        option.textContent = school.name;
-        select.appendChild(option);
-      });
-      if (APP.user && APP.user.schoolId) select.value = APP.user.schoolId;
-    }).catch(console.error);
+    populateSchoolDropdown('fileSchool', '-- เลือกโรงเรียนในสังกัด --', APP.user && APP.user.schoolId).catch(console.error);
 
     updateUserUI();
     loadMyFiles();

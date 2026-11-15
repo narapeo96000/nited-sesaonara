@@ -60,7 +60,7 @@ function doGet(e) {
   return html;
 }
 
-// Public directory response deliberately excludes director, phone, email and address.
+// Public directory exposes school location, but excludes personal contact fields.
 function getPublicSchools_() {
   try {
     const rows = getSheet(SHEETS.SCHOOLS).getDataRange().getValues();
@@ -68,7 +68,13 @@ function getPublicSchools_() {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (!row[0] || row[7] === false) continue;
-      schools.push({ schoolId: row[0], name: row[1] || '', code: row[2] || '', district: row[3] || '' });
+      schools.push({
+        schoolId: row[0],
+        name: row[1] || '',
+        code: row[2] || '',
+        district: row[3] || '',
+        address: row[9] || ''
+      });
     }
     schools.sort((a, b) => String(a.name).localeCompare(String(b.name), 'th'));
     return { success: true, schools };

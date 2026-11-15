@@ -19,7 +19,8 @@
         </div>
       </a>
       <ul class="navbar-nav">
-        <li><a href="../index.html" data-page="dashboard">&#127968; หน้าหลัก</a></li>
+        <li><a href="dashboard.html" data-page="dashboard">&#127968; แดชบอร์ด</a></li>
+        <li><a href="../index.html" data-page="home">&#127968; หน้าหลัก</a></li>
         <li><a href="booking.html" data-page="booking">&#128197; กำหนดการนิเทศ</a></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
         <li><a href="evaluation.html" data-page="evaluation" class="active">&#11088; ผลนิเทศ</a></li>
@@ -158,6 +159,7 @@
   </div>
 
   <script src="../js/config.js"></script>
+  <script src="../js/schools.js"></script>
   <script src="../js/app.js"></script>
   <script>
     if (!checkAuth()) {
@@ -165,19 +167,7 @@
     }
 
     function loadTeachers() {
-      apiPost('getSchools', {})
-        .then(result => {
-          const select = document.getElementById('evalSchool');
-          if (result.success && result.schools.length > 0) {
-            result.schools.forEach(school => {
-              const opt = document.createElement('option');
-              opt.value = school.schoolId;
-              opt.textContent = school.name;
-              select.appendChild(opt);
-            });
-            if (APP.user && APP.user.schoolId) select.value = APP.user.schoolId;
-          }
-        })
+      populateSchoolDropdown('evalSchool', '-- เลือกโรงเรียนในสังกัด --', APP.user && APP.user.schoolId)
         .catch(err => console.error(err));
 
       apiPost('getTeachers', {})
