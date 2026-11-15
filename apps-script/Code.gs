@@ -17,9 +17,9 @@ const DEFAULT_SYSTEM_SETTINGS = [
   ['BOOKING_CONFIRMED', 'ยืนยันแล้ว', 'สถานะกำหนดนิเทศ: ยืนยันแล้ว'],
   ['BOOKING_REJECTED', 'ปฏิเสธ', 'สถานะกำหนดนิเทศ: ปฏิเสธ'],
   ['BOOKING_COMPLETED', 'นิเทศสำเร็จ', 'สถานะกำหนดนิเทศ: นิเทศสำเร็จ'],
-  ['FILE_PENDING', 'รอตรวจสอบ', 'สถานะหลักฐาน: รอตรวจสอบ'],
-  ['FILE_APPROVED', 'ผ่าน', 'สถานะหลักฐาน: ผ่าน'],
-  ['FILE_REVISE', 'ปรับปรุง', 'สถานะหลักฐาน: ปรับปรุง'],
+  ['FILE_PENDING', 'รอตรวจสอบ', 'สถานะไฟล์ประกอบการนิเทศ: รอตรวจสอบ'],
+  ['FILE_APPROVED', 'ผ่าน', 'สถานะไฟล์ประกอบการนิเทศ: ผ่าน'],
+  ['FILE_REVISE', 'ปรับปรุง', 'สถานะไฟล์ประกอบการนิเทศ: ปรับปรุง'],
   ['QUALITY_EXCELLENT', 'ดีมาก', 'ระดับคุณภาพ: ดีมาก'],
   ['QUALITY_GOOD', 'ดี', 'ระดับคุณภาพ: ดี'],
   ['QUALITY_FAIR', 'พอใช้', 'ระดับคุณภาพ: พอใช้'],
@@ -155,7 +155,7 @@ function doPost(e) {
     if (action === 'updateSchool' && !['admin','school'].includes(auth.user.role)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
     if (['deleteBooking','deleteFile'].includes(action) && !['admin','school'].includes(auth.user.role)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
     if (action === 'updateBooking' && data.status !== undefined && !isPrivileged_(auth.user)) return jsonResponse({success:false,message:'เฉพาะผู้ดูแลระบบหรือผู้นิเทศเท่านั้นที่เปลี่ยนสถานะกำหนดนิเทศได้'});
-    if (auth.user.role === 'school' && !['createBooking','updateBooking','deleteBooking','getBookings','getBookingById','uploadFile','getFiles','deleteFile','getEvaluations','getDashboardStats','getCalendarData','getReport','getTeacherReport','getDepartmentReport','getSchools','updateSchool'].includes(action)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
+    if (auth.user.role === 'school' && !['createBooking','updateBooking','deleteBooking','getBookings','getBookingById','uploadFile','getFiles','deleteFile','getEvaluations','getDashboardStats','getReport','getTeacherReport','getDepartmentReport','getSchools','updateSchool'].includes(action)) return jsonResponse({success:false,message:'ไม่มีสิทธิ์ดำเนินการนี้'});
 
     switch (action) {
       case 'createBooking': return jsonResponse(createBooking(data));
@@ -172,7 +172,6 @@ function doPost(e) {
       case 'getEvaluations': return jsonResponse(getEvaluations(data));
       case 'deleteEvaluation': return jsonResponse(deleteEvaluation(data));
       case 'getDashboardStats': return jsonResponse(getDashboardStats(data));
-      case 'getCalendarData': return jsonResponse(getCalendarData(data));
       case 'getReport': return jsonResponse(getReport(data));
       case 'getTeacherReport': return jsonResponse(getTeacherReport(data));
       case 'getDepartmentReport': return jsonResponse(getDepartmentReport(data));
@@ -636,11 +635,13 @@ function isResetExpired_(value) {
 }
 
 function requestPasswordReset_(data) {
+  const schoolCode = String(data.schoolCode || '').trim();
   const email = String(data.email || '').trim().toLowerCase();
+  if (!schoolCode) return {success:false,message:'กรุณากรอกรหัสโรงเรียน'};
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {success:false,message:'กรุณากรอกอีเมลให้ถูกต้อง'};
-  const generic = {success:true,message:'หากอีเมลนี้ตรงกับบัญชีในระบบ ระบบจะส่งรหัสผ่านชั่วคราวให้ภายในไม่กี่นาที รหัสมีอายุ 30 นาที'};
+  const generic = {success:true,message:'หากรหัสโรงเรียนและอีเมลตรงกับข้อมูลในระบบ ระบบจะส่งรหัสผ่านชั่วคราวให้ภายในไม่กี่นาที รหัสมีอายุ 30 นาที'};
   const cache = CacheService.getScriptCache();
-  const digest = Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email));
+  const digest = Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, schoolCode + '|' + email));
   const rateKey = 'nited_password_reset_' + digest;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -652,9 +653,7 @@ function requestPasswordReset_(data) {
   }
 
   const changes = [];
-  const resetEntries = [];
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-  const temporaryCredentials = [];
   try {
     const schoolSheet = getSheet(SHEETS.SCHOOLS);
     const schoolRows = schoolSheet.getDataRange().getValues();
@@ -662,42 +661,30 @@ function requestPasswordReset_(data) {
     const schoolCols = getSchoolColumns_(schoolHeaders);
     const schoolResetCol = schoolHeaders.indexOf('Password Reset Required');
     const schoolExpiresCol = schoolHeaders.indexOf('Password Reset Expires At');
+    let entry = null;
     for (let i = 1; i < schoolRows.length; i++) {
-      if (String(schoolValue_(schoolRows[i], schoolCols, 'email') || '').trim().toLowerCase() !== email || !isSchoolActive_(schoolValue_(schoolRows[i], schoolCols, 'active'))) continue;
-      const entry = {sheet:schoolSheet,rowNumber:i+1,passwordCol:schoolCols.passwordHash,requiredCol:schoolResetCol,expiresCol:schoolExpiresCol,
-        oldPassword:schoolRows[i][schoolCols.passwordHash],oldRequired:schoolRows[i][schoolResetCol],oldExpires:schoolRows[i][schoolExpiresCol],username:schoolValue_(schoolRows[i],schoolCols,'code')};
-      resetEntries.push(entry);
+      const row = schoolRows[i];
+      const rowCode = String(schoolValue_(row, schoolCols, 'code') || '').trim();
+      const rowEmail = String(schoolValue_(row, schoolCols, 'email') || '').trim().toLowerCase();
+      if (rowCode !== schoolCode || rowEmail !== email || !isSchoolActive_(schoolValue_(row, schoolCols, 'active'))) continue;
+      entry = {sheet:schoolSheet,rowNumber:i+1,passwordCol:schoolCols.passwordHash,requiredCol:schoolResetCol,expiresCol:schoolExpiresCol,
+        oldPassword:row[schoolCols.passwordHash],oldRequired:row[schoolResetCol],oldExpires:row[schoolExpiresCol],username:rowCode,
+        schoolName:schoolValue_(row,schoolCols,'name')};
+      break;
     }
-
-    const userSheet = getSheet(SHEETS.USERS);
-    const userRows = userSheet.getDataRange().getValues();
-    const userHeaders = userRows[0] || [];
-    const userEmailCol = userHeaders.indexOf('Email');
-    const userPasswordCol = userHeaders.indexOf('Password');
-    const userNameCol = userHeaders.indexOf('Username');
-    const userActiveCol = userHeaders.indexOf('Active');
-    const userRequiredCol = userHeaders.indexOf('Password Reset Required');
-    const userExpiresCol = userHeaders.indexOf('Password Reset Expires At');
-    if (userEmailCol >= 0) for (let i = 1; i < userRows.length; i++) {
-      if (String(userRows[i][userEmailCol] || '').trim().toLowerCase() !== email || !isUserActive_(userRows[i][userActiveCol])) continue;
-      resetEntries.push({sheet:userSheet,rowNumber:i+1,passwordCol:userPasswordCol,requiredCol:userRequiredCol,expiresCol:userExpiresCol,
-        oldPassword:userRows[i][userPasswordCol],oldRequired:userRows[i][userRequiredCol],oldExpires:userRows[i][userExpiresCol],username:userRows[i][userNameCol]});
+    if (!entry) return generic;
+    if (entry.passwordCol < 0 || entry.requiredCol < 0 || entry.expiresCol < 0) {
+      throw new Error('Schools ต้องมีคอลัมน์ Password Hash, Password Reset Required และ Password Reset Expires At');
     }
-
-    if (!resetEntries.length) return generic;
-    resetEntries.forEach(entry => {
-      const temporaryPassword = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
-      const salt = Utilities.getUuid().replace(/-/g, '');
-      entry.sheet.getRange(entry.rowNumber, entry.passwordCol + 1).setValue(hashSchoolPassword_(temporaryPassword, salt));
-      entry.sheet.getRange(entry.rowNumber, entry.requiredCol + 1).setValue(true);
-      entry.sheet.getRange(entry.rowNumber, entry.expiresCol + 1).setValue(expiresAt);
-      changes.push(entry);
-      temporaryCredentials.push({username:entry.username,password:temporaryPassword});
-    });
-
-    const credentialText = temporaryCredentials.map(item => 'ชื่อผู้ใช้: ' + item.username + '\nรหัสผ่านชั่วคราว: ' + item.password).join('\n\n');
+    const temporaryPassword = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
+    const salt = Utilities.getUuid().replace(/-/g, '');
+    changes.push(entry);
+    entry.sheet.getRange(entry.rowNumber, entry.passwordCol + 1).setValue(hashSchoolPassword_(temporaryPassword, salt));
+    entry.sheet.getRange(entry.rowNumber, entry.requiredCol + 1).setValue(true);
+    entry.sheet.getRange(entry.rowNumber, entry.expiresCol + 1).setValue(expiresAt);
+    const credentialText = 'โรงเรียน: ' + entry.schoolName + '\nชื่อผู้ใช้: ' + entry.username + '\nรหัสผ่านชั่วคราว: ' + temporaryPassword;
     MailApp.sendEmail(email, 'รหัสผ่านชั่วคราวสำหรับระบบนิเทศออนไลน์ สพม.นราธิวาส',
-      'มีคำขอรีเซ็ตรหัสผ่านสำหรับอีเมลนี้\n\n' + credentialText + '\n\nรหัสผ่านชั่วคราวใช้ได้ 30 นาที และระบบจะให้กำหนดรหัสผ่านใหม่หลังเข้าสู่ระบบ\nหากคุณไม่ได้เป็นผู้ขอ สามารถละเว้นอีเมลฉบับนี้ได้');
+      'มีคำขอรีเซ็ตรหัสผ่านสำหรับบัญชีโรงเรียน\n\n' + credentialText + '\n\nรหัสผ่านชั่วคราวใช้ได้ 30 นาที เมื่อเข้าสู่ระบบด้วยรหัสโรงเรียนและรหัสผ่านชั่วคราว ระบบจะให้กำหนดรหัสผ่านใหม่และยืนยันรหัสผ่านก่อนใช้งานต่อ\nหากคุณไม่ได้เป็นผู้ขอ สามารถละเว้นอีเมลฉบับนี้ได้');
     return generic;
   } catch (err) {
     changes.forEach(entry => {
@@ -737,6 +724,9 @@ function changePassword_(data, user) {
     for (let i = 1; i < rows.length; i++) if (String(rows[i][usernameCol]) === String(user.username)) { rowNumber = i + 1; break; }
   }
   if (!rowNumber || passwordCol < 0 || requiredCol < 0 || expiresCol < 0) return {success:false,message:'ไม่พบข้อมูลบัญชีสำหรับเปลี่ยนรหัสผ่าน'};
+  if (user.mustResetPassword && isResetExpired_(sheet.getRange(rowNumber, expiresCol + 1).getValue())) {
+    return {success:false,message:'รหัสผ่านชั่วคราวหมดอายุแล้ว กรุณาขอรหัสรีเซ็ตใหม่'};
+  }
   const salt = Utilities.getUuid().replace(/-/g, '');
   sheet.getRange(rowNumber, passwordCol + 1).setValue(hashSchoolPassword_(password, salt));
   sheet.getRange(rowNumber, requiredCol + 1).setValue(false);
@@ -1002,7 +992,7 @@ function uploadFile(data) {
     if (data._user && data._user.role === 'school') data.schoolId = data._user.schoolId;
     const booking = data.bookingId ? getBookingRecordById_(data.bookingId) : null;
     if (data.bookingId && !booking) return {success:false,message:'ไม่พบ Booking ID ที่เลือก'};
-    if (booking && String(booking.schoolId) !== String(data.schoolId || '')) return {success:false,message:'โรงเรียนของหลักฐานต้องตรงกับโรงเรียนในกำหนดนิเทศ'};
+      if (booking && String(booking.schoolId) !== String(data.schoolId || '')) return {success:false,message:'โรงเรียนเจ้าของไฟล์ประกอบการนิเทศต้องตรงกับโรงเรียนในกำหนดนิเทศ'};
     const sheet = getSheet(SHEETS.FILES);
 
     const fileFolderMap = {
@@ -1405,38 +1395,6 @@ function getDashboardStats(data) {
     }));
 
     return { success: true, stats: stats };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-function getCalendarData(data) {
-  try {
-    const sheet = getSheet(SHEETS.BOOKING);
-    const allData = sheet.getDataRange().getValues();
-    let events = [];
-
-    const month = data.month || new Date().getMonth();
-    const year = data.year || new Date().getFullYear();
-
-    for (let i = 1; i < allData.length; i++) {
-      if (data && data._user && data._user.role === 'school' && String(allData[i][4]) !== String(data._user.schoolId)) continue;
-      const bookingDate = allData[i][1];
-      if (!bookingDate) continue;
-
-      const d = new Date(bookingDate);
-      if (d.getMonth() == month && d.getFullYear() == year) {
-        events.push({
-          date: bookingDate,
-          title: (allData[i][5] || 'โรงเรียน') + (allData[i][10] ? ' - ' + allData[i][10] : '') + (allData[i][7] ? ' (' + allData[i][7] + ')' : ''),
-          time: allData[i][2],
-          status: allData[i][14],
-          department: allData[i][8]
-        });
-      }
-    }
-
-    return { success: true, events: events };
   } catch (err) {
     return { success: false, message: err.toString() };
   }

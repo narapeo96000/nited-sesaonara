@@ -71,7 +71,7 @@
     const privileged = ['admin', 'supervisor'].includes(role);
     const links = [
       ['pages/dashboard.html', '&#127968; แดชบอร์ด'],
-      ['pages/files.html', '&#128194; หลักฐานโรงเรียน'],
+['pages/files.html', '&#128194; ไฟล์ประกอบการนิเทศ'],
       ['pages/reports.html', '&#128202; รายงานโรงเรียน']
     ];
     if (role === 'admin') links.push(['pages/admin.html', '&#9881; ผู้ดูแลระบบ']);

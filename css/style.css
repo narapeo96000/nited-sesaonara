@@ -524,116 +524,6 @@ textarea.form-control {
 }
 
 /* ============================================================
-   Calendar
-   ============================================================ */
-
-.calendar {
-  background: white;
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  background: var(--primary);
-  color: white;
-}
-
-.calendar-header h3 {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.calendar-nav {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-}
-
-.calendar-nav:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.calendar-day-header {
-  padding: 8px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-light);
-  background: #f8f9fa;
-}
-
-.calendar-day {
-  padding: 8px;
-  min-height: 80px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.calendar-day:hover {
-  background: #f0f3f7;
-}
-
-.calendar-day.today {
-  background: #e8f4fd;
-}
-
-.calendar-day.other-month {
-  opacity: 0.4;
-}
-
-.calendar-day .day-number {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.calendar-day .event-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  margin: 1px;
-}
-
-.event-dot.pending { background: var(--warning); }
-.event-dot.confirmed { background: var(--info); }
-.event-dot.completed { background: var(--success); }
-.event-dot.rejected { background: var(--danger); }
-
-.calendar-event {
-  font-size: 10px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.calendar-event.pending { background: #fff3cd; color: #856404; }
-.calendar-event.confirmed { background: #d1ecf1; color: #0c5460; }
-.calendar-event.completed { background: #d4edda; color: #155724; }
-
-/* ============================================================
    Modal
    ============================================================ */
 
@@ -1049,10 +939,6 @@ textarea.form-control {
     padding: 12px;
   }
 
-  .calendar-day {
-    min-height: 50px;
-    padding: 4px;
-  }
 }
 
 /* ============================================================
