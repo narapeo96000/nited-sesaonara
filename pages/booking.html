@@ -62,31 +62,35 @@
                   <input type="date" class="form-control" id="bookDate" required min="">
                 </div>
                 <div class="form-group">
-                  <label>ช่วงเวลา <span class="required">*</span></label>
+                  <label>ช่วงเวลา</label>
                   <select class="form-control" id="bookTime" required onchange="updatePeriod()">
                     <option value="">-- เลือกช่วงเวลา --</option>
+                    <option value="ไม่ระบุ">ไม่ระบุ</option>
                   </select>
                 </div>
               </div>
 
               <div class="form-row-3">
                 <div class="form-group">
-                  <label>คาบที่ <span class="required">*</span></label>
+                  <label>คาบที่</label>
                   <select class="form-control" id="bookPeriod" required>
                     <option value="">-- เลือกคาบ --</option>
+                    <option value="ไม่ระบุ">ไม่ระบุ</option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>กลุ่มสาระ <span class="required">*</span></label>
-                  <select class="form-control" id="bookDept" required>
+                  <select class="form-control" id="bookDept" required onchange="toggleCustomField('bookDept','bookDeptOther')">
                     <option value="">-- เลือกกลุ่มสาระ --</option>
                   </select>
+                  <input class="form-control" id="bookDeptOther" placeholder="ระบุกลุ่มสาระ" style="display:none;margin-top:8px;" disabled>
                 </div>
                 <div class="form-group">
                   <label>ระดับชั้น <span class="required">*</span></label>
-                  <select class="form-control" id="bookClass" required>
+                  <select class="form-control" id="bookClass" required onchange="toggleCustomField('bookClass','bookClassOther')">
                     <option value="">-- เลือกระดับชั้น --</option>
                   </select>
+                  <input class="form-control" id="bookClassOther" placeholder="ระบุระดับชั้น" style="display:none;margin-top:8px;" disabled>
                 </div>
               </div>
 
@@ -108,8 +112,13 @@
                 </div>
                 <div class="form-group">
                   <label>ครู/ห้องเรียนเป้าหมาย (ถ้ากำหนดแล้ว)</label>
-                  <input type="text" class="form-control" id="bookTeacher" placeholder="ใช้ระบุกรณีศึกษาหรือชั้นเรียนที่จะเข้าสังเกต">
+                  <input type="text" class="form-control" id="bookTeacher" placeholder="ชื่อครูหรือห้องเรียนเป้าหมาย (ไม่บังคับ)">
                 </div>
+              </div>
+
+              <div class="form-group">
+                <label>ผู้นิเทศ</label>
+                <input type="text" class="form-control" id="bookSupervisor" placeholder="ชื่อผู้นิเทศ">
               </div>
 
               <div class="form-group">
@@ -172,10 +181,12 @@
 
     const DEPARTMENTS = [
       'คณิตศาสตร์', 'วิทยาศาสตร์', 'ภาษาไทย', 'ภาษาอังกฤษ',
-      'สังคมศึกษา', 'พลศึกษา', 'ศิลปะ', 'การงานอาชีพ', 'เทคโนโลยี'
+      'สังคมศึกษา', 'พลศึกษา', 'ศิลปะ', 'การงานอาชีพ', 'เทคโนโลยี', 'อื่นๆ'
     ];
 
-    const CLASS_LEVELS = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
+    const CLASS_LEVELS = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6', 'อื่นๆ'];
+    let editingBookingRow = null;
+    let bookingItems = [];
 
     const TIME_SLOTS = [
       { time: '08:30-09:00', period: 'คาบที่ 1' },
@@ -197,6 +208,7 @@
       populateSchoolDropdown('bookSchool', '-- เลือกโรงเรียน --', APP.user && APP.user.schoolId).catch(console.error);
 
       const timeSelect = document.getElementById('bookTime');
+      if (APP.user && APP.user.fullName) document.getElementById('bookSupervisor').value = APP.user.fullName;
       TIME_SLOTS.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.time;
@@ -228,9 +240,35 @@
         periodSelect.appendChild(opt);
       }
 
-      if (APP.user && APP.user.fullName) {
-        document.getElementById('bookTeacher').value = APP.user.fullName;
+    }
+
+    function toggleCustomField(selectId, inputId) {
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      const isOther = select.value === 'อื่นๆ';
+      input.style.display = isOther ? '' : 'none';
+      input.disabled = !isOther;
+      input.required = isOther;
+      if (!isOther) input.value = '';
+    }
+
+    function setSelectOrOther(selectId, inputId, value) {
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      const predefined = Array.from(select.options).some(option => option.value === value);
+      if (predefined) {
+        select.value = value;
+        toggleCustomField(selectId, inputId);
+      } else {
+        select.value = 'อื่นๆ';
+        toggleCustomField(selectId, inputId);
+        input.value = value || '';
       }
+    }
+
+    function selectedFieldValue(selectId, inputId) {
+      const select = document.getElementById(selectId);
+      return select.value === 'อื่นๆ' ? document.getElementById(inputId).value.trim() : select.value;
     }
 
     function updatePeriod() {
@@ -238,6 +276,8 @@
       const slot = TIME_SLOTS.find(s => s.time === timeVal);
       if (slot) {
         document.getElementById('bookPeriod').value = slot.period;
+      } else if (timeVal === 'ไม่ระบุ') {
+        document.getElementById('bookPeriod').value = 'ไม่ระบุ';
       }
     }
 
@@ -252,19 +292,20 @@
         date: document.getElementById('bookDate').value,
         time: document.getElementById('bookTime').value,
         period: document.getElementById('bookPeriod').value,
-        department: document.getElementById('bookDept').value,
-        classLevel: document.getElementById('bookClass').value,
+        department: selectedFieldValue('bookDept', 'bookDeptOther'),
+        classLevel: selectedFieldValue('bookClass', 'bookClassOther'),
         subjectName: document.getElementById('bookSubject').value,
         subjectCode: document.getElementById('bookSubjectCode').value,
         room: document.getElementById('bookRoom').value,
         teacherName: document.getElementById('bookTeacher').value,
+        supervisorName: document.getElementById('bookSupervisor').value,
         notes: document.getElementById('bookNotes').value
       };
 
-      apiPost('createBooking', data)
+      apiPost(editingBookingRow ? 'updateBooking' : 'createBooking', editingBookingRow ? { ...data, rowNumber: editingBookingRow } : data)
         .then(result => {
           if (result.success) {
-            showToast('บันทึกกำหนดนิเทศแล้ว รอการยืนยันจากผู้ดูแลระบบ', 'success');
+            showToast(editingBookingRow ? 'แก้ไขกำหนดนิเทศแล้ว' : 'บันทึกกำหนดนิเทศแล้ว รอการยืนยันจากผู้ดูแลระบบ', 'success');
             resetBookingForm();
             loadMyBookings();
             loadCalendarEvents('bookingCalendar');
@@ -274,35 +315,42 @@
         })
         .catch(err => {
           showToast('เกิดข้อผิดพลาด: ' + (err.message || err), 'error');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '&#128197; ' + (editingBookingRow ? 'บันทึกการแก้ไข' : 'บันทึกกำหนดนิเทศ');
         });
-
-      btn.disabled = false;
-      btn.innerHTML = '&#128197; บันทึกกำหนดนิเทศ';
       return false;
     }
 
     function resetBookingForm() {
       document.getElementById('bookingForm').reset();
-      if (APP.user && APP.user.fullName) {
-        document.getElementById('bookTeacher').value = APP.user.fullName;
-      }
+      editingBookingRow = null;
+      document.getElementById('bookDeptOther').value = '';
+      document.getElementById('bookClassOther').value = '';
+      toggleCustomField('bookDept', 'bookDeptOther');
+      toggleCustomField('bookClass', 'bookClassOther');
+      document.querySelector('#bookingForm [type="submit"]').innerHTML = '&#128197; บันทึกกำหนดนิเทศ';
+      if (APP.user && APP.user.role === 'school') document.getElementById('bookSchool').value = APP.user.schoolId;
+      if (APP.user && APP.user.fullName) document.getElementById('bookSupervisor').value = APP.user.fullName;
     }
 
     function loadMyBookings() {
-      const teacherName = APP.user ? APP.user.fullName : '';
-      apiPost('getBookings', { teacherName: teacherName })
+      apiPost('getBookings', {})
         .then(result => {
           const container = document.getElementById('myBookingsList');
+          bookingItems = result.success ? result.bookings : [];
           if (result.success && result.bookings.length > 0) {
             container.innerHTML = result.bookings.map((b, idx) => `
-              <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="showBookingDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+              <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <div style="font-size:13px;font-weight:600;">${escapeHtml(b['Subject Name'] || b.subjectName || '-')}</div>
-                    <div style="font-size:11px;color:#999;">${formatDate(b['Date'] || b.date)} | ${escapeHtml(b['Time'] || b.time || '')}</div>
+                    <div style="font-size:13px;font-weight:600;">${escapeHtml(b['School Name'] || '-')} · ${escapeHtml(b['Subject Name'] || b.subjectName || '-')}</div>
+                    <div style="font-size:11px;color:#999;">${formatDate(b['Date'] || b.date)} | ${escapeHtml(b['Time'] || b.time || 'ไม่ระบุ')} | ${escapeHtml(b['Period'] || b.period || 'ไม่ระบุ')}</div>
                   </div>
                   ${getStatusBadge(b['Status'] || b.status || 'รอดำเนินการ')}
                 </div>
+                <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="viewBooking(${b.rowNumber})">รายละเอียด</button><button class="btn btn-sm btn-outline" onclick="editBooking(${b.rowNumber})">&#9998; แก้ไข</button></div>
               </div>
             `).join('');
           } else {
@@ -310,6 +358,31 @@
           }
         })
         .catch(err => console.error(err));
+    }
+
+    function viewBooking(rowNumber) {
+      const booking = bookingItems.find(item => Number(item.rowNumber) === Number(rowNumber));
+      if (booking) showBookingDetail(booking);
+    }
+
+    function editBooking(rowNumber) {
+      const booking = bookingItems.find(item => Number(item.rowNumber) === Number(rowNumber));
+      if (!booking) return;
+      editingBookingRow = Number(rowNumber);
+      document.getElementById('bookSchool').value = booking['School ID'] || '';
+      document.getElementById('bookDate').value = booking['Date'] || '';
+      document.getElementById('bookTime').value = booking['Time'] || 'ไม่ระบุ';
+      document.getElementById('bookPeriod').value = booking['Period'] || 'ไม่ระบุ';
+      setSelectOrOther('bookDept','bookDeptOther',booking['Department'] || '');
+      setSelectOrOther('bookClass','bookClassOther',booking['Class Level'] || '');
+      document.getElementById('bookSubject').value = booking['Subject Name'] || '';
+      document.getElementById('bookSubjectCode').value = booking['Subject Code'] || '';
+      document.getElementById('bookRoom').value = booking['Room'] || '';
+      document.getElementById('bookTeacher').value = booking['Teacher Name'] || '';
+      document.getElementById('bookSupervisor').value = booking['Supervisor Name'] || '';
+      document.getElementById('bookNotes').value = booking['Notes'] || '';
+      document.querySelector('#bookingForm [type="submit"]').innerHTML = '&#128190; บันทึกการแก้ไข';
+      document.getElementById('bookingForm').scrollIntoView({behavior:'smooth',block:'start'});
     }
 
     function showBookingDetail(booking) {
@@ -323,7 +396,8 @@
             <div><strong>วิชา:</strong> ${escapeHtml(booking['Subject Name'] || booking.subjectName)}</div>
             <div><strong>รหัสวิชา:</strong> ${escapeHtml(booking['Subject Code'] || booking.subjectCode || '-')}</div>
             <div><strong>ห้อง:</strong> ${escapeHtml(booking['Room'] || booking.room)}</div>
-            <div><strong>ครู:</strong> ${escapeHtml(booking['Teacher Name'] || booking.teacherName)}</div>
+            <div><strong>ครู/ห้องเรียนเป้าหมาย:</strong> ${escapeHtml(booking['Teacher Name'] || booking.teacherName || 'ไม่ระบุ')}</div>
+            <div><strong>ผู้นิเทศ:</strong> ${escapeHtml(booking['Supervisor Name'] || booking.supervisorName || 'ไม่ระบุ')}</div>
           </div>
           <div><strong>สถานะ:</strong> ${getStatusBadge(booking['Status'] || booking.status)}</div>
           ${booking['Notes'] || booking.notes ? `<div><strong>หมายเหตุ:</strong> ${escapeHtml(booking['Notes'] || booking.notes)}</div>` : ''}
