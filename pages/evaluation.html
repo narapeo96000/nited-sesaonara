@@ -23,7 +23,7 @@
         <li><a href="../index.html" data-page="home">&#127968; หน้าหลัก</a></li>
         <li><a href="booking.html" data-page="booking">&#128197; กำหนดการนิเทศ</a></li>
         <li><a href="files.html" data-page="files">&#128194; หลักฐานโรงเรียน</a></li>
-        <li><a href="evaluation.html" data-page="evaluation" class="active">&#11088; ผลนิเทศ</a></li>
+        <li class="supervisor-only"><a href="evaluation.html" data-page="evaluation" class="active">&#11088; นิเทศ</a></li>
         <li><a href="reports.html" data-page="reports">&#128202; รายงานโรงเรียน</a></li>
         <li class="admin-only"><a href="admin.html" data-page="admin">&#9881; ผู้ดูแลระบบ</a></li>
       </ul>
@@ -59,56 +59,19 @@
                 </select>
               </div>
               <div class="form-row">
-                <div class="form-group">
-                  <label>ครู/ชั้นเรียนกรณีศึกษา (ถ้ามี)</label>
-                  <select class="form-control" id="evalTeacher">
-                    <option value="">-- ไม่ระบุ --</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>วันที่นิเทศ <span class="required">*</span></label>
-                  <input type="date" class="form-control" id="evalDate" required>
-                </div>
+                <div class="form-group"><label>ประเภทการนิเทศ <span class="required">*</span></label><select class="form-control" id="evalType" required><option value="">-- เลือกประเภท --</option><option>นิเทศการจัดการเรียนรู้</option><option>นิเทศติดตาม</option><option>นิเทศภายในสถานศึกษา</option><option>นิเทศออนไลน์</option><option>อื่น ๆ</option></select></div>
+                <div class="form-group"><label>ผู้นิเทศ</label><input class="form-control" id="evalSupervisor" readonly></div>
               </div>
+              <div class="form-row"><div class="form-group"><label>ครูผู้รับการนิเทศ</label><input class="form-control" id="evalTeacher"></div><div class="form-group"><label>กลุ่มสาระการเรียนรู้</label><input class="form-control" id="evalSubjectGroup"></div></div>
+              <div class="form-row"><div class="form-group"><label>รายวิชา</label><input class="form-control" id="evalSubject"></div><div class="form-group"><label>ระดับชั้น</label><select class="form-control" id="evalGrade"><option value="">-- เลือกระดับชั้น --</option><option>ม.1</option><option>ม.2</option><option>ม.3</option><option>ม.4</option><option>ม.5</option><option>ม.6</option></select></div></div>
+              <div class="form-row"><div class="form-group"><label>คาบ/ช่วงเวลา</label><input class="form-control" id="evalPeriod" placeholder="เช่น คาบที่ 1 เวลา 08.30-09.20 น."></div><div class="form-group"><label>วันที่จัดการเรียนรู้ <span class="required">*</span></label><input type="date" class="form-control" id="evalDate" required></div></div>
+              <div class="form-group"><label>หัวข้อ/เรื่องที่สอน <span class="required">*</span></label><input class="form-control" id="evalTopic" required></div>
+              <div class="form-group"><label>เทคนิค/วิธีการจัดการเรียนรู้</label><textarea class="form-control" id="evalTechniques" rows="3"></textarea></div>
+              <div class="form-group"><label>คะแนนรายข้อ/รายละเอียดคะแนน</label><textarea class="form-control" id="evalScores" rows="3" placeholder="ระบุรายการและคะแนน"></textarea></div>
+              <div class="form-group"><label>คะแนนรวม</label><input type="number" class="form-control" id="evalTotalScore" min="0" step="0.01"></div>
 
-              <div class="form-group">
-                <label>เชื่อมโยงกับการจอง (ถ้ามี)</label>
-                <select class="form-control" id="evalBooking">
-                  <option value="">-- ไม่เชื่อมโยง --</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label>จุดเด่น <span class="required">*</span></label>
-                <textarea class="form-control" id="evalStrengths" rows="4" placeholder="จุดเด่นในการจัดการเรียนการสอน..." required></textarea>
-              </div>
-
-              <div class="form-group">
-                <label>จุดพัฒนา <span class="required">*</span></label>
-                <textarea class="form-control" id="evalImprovements" rows="4" placeholder="จุดที่ควรพัฒนาปรับปรุง..." required></textarea>
-              </div>
-
-              <div class="form-group">
-                <label>ข้อเสนอแนะ</label>
-                <textarea class="form-control" id="evalSuggestions" rows="3" placeholder="ข้อเสนอแนะเพิ่มเติม..."></textarea>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label>ระดับคุณภาพ <span class="required">*</span></label>
-                  <select class="form-control" id="evalQuality" required>
-                    <option value="">-- เลือกระดับ --</option>
-                    <option value="ดีมาก">&#11088;&#11088;&#11088;&#11088; ดีมาก</option>
-                    <option value="ดี">&#11088;&#11088;&#11088; ดี</option>
-                    <option value="พอใช้">&#11088;&#11088; พอใช้</option>
-                    <option value="ปรับปรุง">&#11088; ปรับปรุง</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>คะแนน (0-100)</label>
-                  <input type="number" class="form-control" id="evalScore" min="0" max="100" placeholder="0-100">
-                </div>
-              </div>
+              <div class="form-row"><div class="form-group"><label>จุดเด่น <span class="required">*</span></label><textarea class="form-control" id="evalStrengths" rows="3" required></textarea></div><div class="form-group"><label>ประเด็นที่ควรพัฒนา <span class="required">*</span></label><textarea class="form-control" id="evalImprovements" rows="3" required></textarea></div></div>
+              <div class="form-group"><label>ข้อเสนอแนะ</label><textarea class="form-control" id="evalSuggestions" rows="3"></textarea></div>
 
               <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;">&#128190; บันทึกผลการประเมิน</button>
             </form>
@@ -168,34 +131,11 @@
 
     function loadTeachers() {
       populateSchoolDropdown('evalSchool', '-- เลือกโรงเรียนในสังกัด --', APP.user && APP.user.schoolId)
-        .catch(err => console.error(err));
-
-      apiPost('getTeachers', {})
-        .then(result => {
-          const select = document.getElementById('evalTeacher');
-          if (result.success && result.teachers.length > 0) {
-            result.teachers.forEach(t => {
-              const opt = document.createElement('option');
-              opt.value = t;
-              opt.textContent = t;
-              select.appendChild(opt);
-            });
-          }
-        }).catch(err => console.error(err));
-    }
-
-    function loadBookingsForEval() {
-      apiPost('getBookings', {})
-        .then(result => {
-          const select = document.getElementById('evalBooking');
-          if (result.success && result.bookings.length > 0) {
-            result.bookings.forEach(b => {
-              const opt = document.createElement('option');
-              opt.value = b.rowNumber;
-              opt.textContent = `${formatDate(b['Date'])} - ${b['School Name'] || 'โรงเรียน'} (${b['Subject Name'] || 'นิเทศสถานศึกษา'})`;
-              select.appendChild(opt);
-            });
-          }
+        .then(schools => {
+          const select = document.getElementById('evalSchool');
+          Array.from(select.options).forEach(option => {
+            if (option.value) option.textContent += ` (${option.dataset.code || ''})`;
+          });
         })
         .catch(err => console.error(err));
     }
@@ -210,9 +150,9 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
                     <div style="font-size:13px;font-weight:600;">${escapeHtml(e['School Name'] || e['Teacher Name'] || 'ผลนิเทศโรงเรียน')}</div>
-                    <div style="font-size:11px;color:#999;">${formatDate(e['Supervision Date'])}</div>
+                    <div style="font-size:11px;color:#999;">${formatDate(e['Teaching Date'])} · ${escapeHtml(e['Supervision Type'] || '')}</div>
                   </div>
-                  ${getStatusBadge(e['Quality Level'])}
+                  ${getStatusBadge(e['Total Score'] >= 80 ? 'ดีมาก' : e['Total Score'] >= 60 ? 'ดี' : e['Total Score'] >= 40 ? 'พอใช้' : 'ปรับปรุง')}
                 </div>
               </div>
             `).join('');
@@ -231,14 +171,21 @@
 
       const data = {
         schoolId: document.getElementById('evalSchool').value,
+        supervisionType: document.getElementById('evalType').value,
+        supervisorName: APP.user.fullName,
         teacherName: document.getElementById('evalTeacher').value,
-        supervisionDate: document.getElementById('evalDate').value,
-        bookingId: document.getElementById('evalBooking').value,
+        subjectGroup: document.getElementById('evalSubjectGroup').value,
+        subjectName: document.getElementById('evalSubject').value,
+        gradeLevel: document.getElementById('evalGrade').value,
+        period: document.getElementById('evalPeriod').value,
+        teachingDate: document.getElementById('evalDate').value,
+        topic: document.getElementById('evalTopic').value,
+        techniques: document.getElementById('evalTechniques').value,
+        scores: document.getElementById('evalScores').value,
+        totalScore: document.getElementById('evalTotalScore').value,
         strengths: document.getElementById('evalStrengths').value,
         improvements: document.getElementById('evalImprovements').value,
         suggestions: document.getElementById('evalSuggestions').value,
-        qualityLevel: document.getElementById('evalQuality').value,
-        score: document.getElementById('evalScore').value,
         evaluatedBy: APP.user.fullName
       };
 
@@ -254,17 +201,19 @@
         })
         .catch(err => {
           showToast('เกิดข้อผิดพลาด: ' + (err.message || err), 'error');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '&#128190; บันทึกผลการประเมิน';
         });
-
-      btn.disabled = false;
-      btn.innerHTML = '&#128190; บันทึกผลการประเมิน';
       return false;
     }
 
     // Init
     updateUserUI();
     loadTeachers();
-    loadBookingsForEval();
+    document.getElementById('evalSupervisor').value = APP.user.fullName || '';
+    document.getElementById('evalType').required = true;
     loadRecentEvaluations();
   </script>
 </body>

@@ -11,7 +11,7 @@ const ADMIN_PASSWORD_PROPERTY = 'NITED_ADMIN_PASSWORD';
 const SHEETS = {
   BOOKING: 'Booking',
   FILES: 'Files',
-  EVALUATION: 'Supervision',
+  EVALUATION: 'Inspections',
   USERS: 'Users',
   SCHOOLS: 'Schools'
 };
@@ -146,7 +146,7 @@ function ensureSheetHeaders(sheet, name) {
   const headers = {
     [SHEETS.BOOKING]: ['Timestamp', 'Date', 'Time', 'Teacher Name', 'Department', 'Period', 'Subject Name', 'Subject Code', 'Class Level', 'Room', 'Status', 'Notes', 'School ID'],
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
-    [SHEETS.EVALUATION]: ['Timestamp', 'Teacher Name', 'Supervision Date', 'Booking ID', 'Strengths', 'Improvements', 'Suggestions', 'Quality Level', 'Score', 'Evaluated By', 'Booking Reference', 'School ID'],
+    [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
     [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Active', 'Created At', 'Address', 'Website']
   }[name];
@@ -167,7 +167,7 @@ function initializeSheet(sheet, name) {
   const headers = {
     [SHEETS.BOOKING]: ['Timestamp', 'Date', 'Time', 'Teacher Name', 'Department', 'Period', 'Subject Name', 'Subject Code', 'Class Level', 'Room', 'Status', 'Notes', 'School ID'],
     [SHEETS.FILES]: ['Timestamp', 'Teacher Name', 'Booking ID', 'File Type', 'File Name', 'File URL', 'Drive File ID', 'Status', 'Admin Note', 'Reviewed By', 'Reviewed Date', 'School ID'],
-    [SHEETS.EVALUATION]: ['Timestamp', 'Teacher Name', 'Supervision Date', 'Booking ID', 'Strengths', 'Improvements', 'Suggestions', 'Quality Level', 'Score', 'Evaluated By', 'Booking Reference', 'School ID'],
+    [SHEETS.EVALUATION]: ['Timestamp', 'Supervision Type', 'Supervisor Name', 'School Name', 'School Code', 'Teacher Name', 'Subject Group', 'Subject Name', 'Grade Level', 'Period', 'Teaching Date', 'Topic', 'Techniques', 'Scores', 'Total Score', 'Strengths', 'Improvements', 'Suggestions', 'Evaluated By'],
     [SHEETS.USERS]: ['Username', 'Password', 'Full Name', 'Role', 'Department', 'Active', 'School ID'],
     [SHEETS.SCHOOLS]: ['School ID', 'School Name', 'School Code', 'District', 'Director', 'Phone', 'Email', 'Active', 'Created At', 'Address', 'Website']
   };
@@ -273,6 +273,12 @@ function createBooking(data) {
     const id = generateId();
     if (!isActiveSchool(data.schoolId)) {
       return { success: false, message: 'กรุณาเลือกโรงเรียนผู้รับการนิเทศที่อยู่ในสังกัด' };
+    }
+    if (!data.supervisionType || !data.teachingDate || !data.topic) {
+      return { success: false, message: 'กรุณาระบุประเภทการนิเทศ วันที่จัดการเรียนรู้ และหัวข้อที่สอน' };
+    }
+    if (data.totalScore !== '' && data.totalScore != null && (isNaN(Number(data.totalScore)) || Number(data.totalScore) < 0)) {
+      return { success: false, message: 'คะแนนรวมต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป' };
     }
 
     const conflicting = checkBookingConflict(data.date, data.time, data.period, data.schoolId);
@@ -558,42 +564,16 @@ function createEvaluation(data) {
     if (!isActiveSchool(data.schoolId)) {
       return { success: false, message: 'กรุณาเลือกโรงเรียนผู้รับการนิเทศที่อยู่ในสังกัด' };
     }
-
-    const row = [
-      formatDateTime(new Date()),
-      data.teacherName,
-      data.supervisionDate,
-      data.bookingId || '',
-      data.strengths,
-      data.improvements,
-      data.suggestions,
-      data.qualityLevel,
-      data.score || '',
-      data.evaluatedBy || '',
-      data.bookingReference || '',
-      data.schoolId || ''
-    ];
-
+    const school = getSchools({}).schools.find(item => String(item.schoolId) === String(data.schoolId));
+    const row = [formatDateTime(new Date()), data.supervisionType || '', data.supervisorName || '',
+      school.name, school.code, data.teacherName || '', data.subjectGroup || '', data.subjectName || '',
+      data.gradeLevel || '', data.period || '', data.teachingDate || '', data.topic || '', data.techniques || '',
+      data.scores || '', data.totalScore === '' || data.totalScore == null ? '' : Number(data.totalScore),
+      data.strengths || '', data.improvements || '', data.suggestions || '', data.evaluatedBy || ''];
     sheet.appendRow(row);
-
-    if (data.bookingId) {
-      try {
-        const bookingSheet = getSheet(SHEETS.BOOKING);
-        const allBookings = bookingSheet.getDataRange().getValues();
-        for (let i = 1; i < allBookings.length; i++) {
-          if (allBookings[i][0] === data.bookingId) {
-            bookingSheet.getRange(i + 1, 11).setValue(STATUS.COMPLETED);
-            break;
-          }
-        }
-      } catch (e) {
-        // Continue even if booking update fails
-      }
-    }
-
     return {
       success: true,
-      message: 'บันทึกผลการประเมินสำเร็จ'
+      message: 'บันทึกข้อมูลการนิเทศสำเร็จ'
     };
   } catch (err) {
     return { success: false, message: err.toString() };
@@ -609,15 +589,13 @@ function updateEvaluation(data) {
       return { success: false, message: 'ไม่พบรายการประเมิน' };
     }
 
-    const currentData = sheet.getRange(rowNum, 1, 1, 11).getValues()[0];
-
-    if (data.strengths !== undefined) currentData[4] = data.strengths;
-    if (data.improvements !== undefined) currentData[5] = data.improvements;
-    if (data.suggestions !== undefined) currentData[6] = data.suggestions;
-    if (data.qualityLevel) currentData[7] = data.qualityLevel;
-    if (data.score !== undefined) currentData[8] = data.score;
-
-    sheet.getRange(rowNum, 1, 1, 11).setValues([currentData]);
+    const currentData = sheet.getRange(rowNum, 1, 1, 19).getValues()[0];
+    if (data.scores !== undefined) currentData[13] = data.scores;
+    if (data.totalScore !== undefined) currentData[14] = data.totalScore;
+    if (data.strengths !== undefined) currentData[15] = data.strengths;
+    if (data.improvements !== undefined) currentData[16] = data.improvements;
+    if (data.suggestions !== undefined) currentData[17] = data.suggestions;
+    sheet.getRange(rowNum, 1, 1, 19).setValues([currentData]);
 
     return { success: true, message: 'อัพเดทผลการประเมินสำเร็จ' };
   } catch (err) {
@@ -639,10 +617,9 @@ function getEvaluations(data) {
       for (let j = 0; j < headers.length; j++) {
         row[headers[j]] = allData[i][j];
       }
-      row['School Name'] = schoolNames[String(allData[i][11] || '')] || '';
-
-      if (data && data.teacherName && allData[i][1] !== data.teacherName) continue;
-      if (data && data.qualityLevel && allData[i][7] !== data.qualityLevel) continue;
+      row['School Name'] = row['School Name'] || '';
+      if (data && data.teacherName && row['Teacher Name'] !== data.teacherName) continue;
+      if (data && data.schoolId && row['School Code'] !== data.schoolId && row['School Name'] !== data.schoolId) continue;
 
       evaluations.push(row);
     }
@@ -755,11 +732,11 @@ function getDashboardStats(data) {
     }
 
     for (let i = 1; i < evalData.length; i++) {
-      const level = evalData[i][7];
-      if (level === QUALITY_LEVELS.EXCELLENT) stats.excellentCount++;
-      if (level === QUALITY_LEVELS.GOOD) stats.goodCount++;
-      if (level === QUALITY_LEVELS.FAIR) stats.fairCount++;
-      if (level === QUALITY_LEVELS.POOR) stats.poorCount++;
+      const total = Number(evalData[i][14]) || 0;
+      if (total >= 80) stats.excellentCount++;
+      else if (total >= 60) stats.goodCount++;
+      else if (total >= 40) stats.fairCount++;
+      else if (evalData[i][14] !== '') stats.poorCount++;
     }
 
     stats.recentBookings = bookingData.slice(-10).reverse().map((row, idx) => ({
@@ -787,12 +764,12 @@ function getDashboardStats(data) {
 
     stats.recentEvaluations = evalData.slice(-5).reverse().map((row, idx) => ({
       rowNumber: evalData.length - idx,
-      teacherName: row[1],
-      schoolId: row[11] || '',
-      schoolName: schoolNames[String(row[11] || '')] || '',
-      supervisionDate: row[2],
-      qualityLevel: row[7],
-      evaluatedBy: row[9]
+      teacherName: row[5],
+      schoolId: '',
+      schoolName: row[3] || '',
+      supervisionDate: row[10],
+      qualityLevel: scoreToQuality_(row[14]),
+      evaluatedBy: row[18]
     }));
 
     return { success: true, stats: stats };
@@ -884,11 +861,13 @@ function getReport(data) {
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
       report.evaluations.push({
-        teacherName: evalData[i][1],
-        supervisionDate: evalData[i][2],
-        strengths: evalData[i][4],
-        improvements: evalData[i][5],
-        qualityLevel: evalData[i][7]
+        teacherName: evalData[i][5],
+        schoolName: evalData[i][3],
+        supervisionType: evalData[i][1],
+        supervisionDate: evalData[i][10],
+        strengths: evalData[i][15],
+        improvements: evalData[i][16],
+        qualityLevel: scoreToQuality_(evalData[i][14])
       });
     }
 
@@ -947,13 +926,13 @@ function getTeacherReport(data) {
 
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
-      if (evalData[i][1] === teacherName) {
+      if (evalData[i][5] === teacherName) {
         report.evaluations.push({
-          supervisionDate: evalData[i][2],
-          strengths: evalData[i][4],
-          improvements: evalData[i][5],
-          suggestions: evalData[i][6],
-          qualityLevel: evalData[i][7]
+          supervisionDate: evalData[i][10],
+          strengths: evalData[i][15],
+          improvements: evalData[i][16],
+          suggestions: evalData[i][17],
+          qualityLevel: scoreToQuality_(evalData[i][14])
         });
       }
     }
@@ -1007,11 +986,11 @@ function getDepartmentReport(data) {
 
     const evalData = evalSheet.getDataRange().getValues();
     for (let i = 1; i < evalData.length; i++) {
-      const teacher = evalData[i][1];
+      const teacher = evalData[i][5];
       if (report.teachers[teacher]) {
         report.teachers[teacher].evaluations.push({
-          date: evalData[i][2],
-          qualityLevel: evalData[i][7]
+          date: evalData[i][10],
+          qualityLevel: scoreToQuality_(evalData[i][14])
         });
       }
     }
@@ -1053,6 +1032,15 @@ function getAvgQuality(evaluations) {
   if (avg >= 3.5) return QUALITY_LEVELS.EXCELLENT;
   if (avg >= 2.5) return QUALITY_LEVELS.GOOD;
   if (avg >= 1.5) return QUALITY_LEVELS.FAIR;
+  return QUALITY_LEVELS.POOR;
+}
+
+function scoreToQuality_(score) {
+  const value = Number(score);
+  if (score === '' || score == null || isNaN(value)) return '';
+  if (value >= 80) return QUALITY_LEVELS.EXCELLENT;
+  if (value >= 60) return QUALITY_LEVELS.GOOD;
+  if (value >= 40) return QUALITY_LEVELS.FAIR;
   return QUALITY_LEVELS.POOR;
 }
 

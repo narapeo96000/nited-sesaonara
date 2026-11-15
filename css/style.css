@@ -1128,3 +1128,4 @@ textarea.form-control {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
+.supervisor-only{display:none}
