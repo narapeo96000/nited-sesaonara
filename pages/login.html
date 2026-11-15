@@ -6,7 +6,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    body{background:linear-gradient(135deg,#f1f6f8,#e5eef3);min-height:100vh;display:grid;place-items:center;padding:22px}.login-shell{width:min(100%,420px)}.login-brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:22px;color:#0b2d5c}.login-brand .logo{width:54px;height:54px;border-radius:14px;background:#fff;display:grid;place-items:center;padding:3px;overflow:hidden}.login-brand .logo img{width:100%;height:100%;object-fit:contain}.login-brand b,.login-brand small{display:block}.login-brand small{font-size:11px;color:#738296;margin-top:3px}.login-box{background:#fff;border:1px solid #e2e9ef;border-radius:16px;padding:32px;box-shadow:0 20px 55px rgba(11,45,92,.12)}.login-box h1{font-size:23px;color:#0b2d5c;margin:0 0 7px}.login-box>p{font-size:12px;color:#718196;margin:0 0 25px}.login-box .form-group{margin-bottom:16px}.login-box label{display:block;font-size:12px;font-weight:600;margin-bottom:7px;color:#344d68}.login-box input{width:100%;padding:12px;border:1px solid #dce5ec;border-radius:8px;font:inherit;font-size:13px}.login-box input:focus{outline:2px solid #0e8f6f33;border-color:#0e8f6f}.login-box .btn-primary{width:100%;justify-content:center;margin-top:4px}.login-back{display:block;text-align:center;margin-top:18px;text-decoration:none;color:#0e8f6f;font-size:12px}.login-help{margin-top:17px;padding:12px;background:#f3f7fa;border-radius:8px;color:#63758b;font-size:11px;line-height:1.7}
+    body{background:linear-gradient(135deg,#f1f6f8,#e5eef3);min-height:100vh;display:grid;place-items:center;padding:22px}.login-shell{width:min(100%,420px)}.login-brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:22px;color:#0b2d5c}.login-brand .logo{width:54px;height:54px;border-radius:14px;background:#fff;display:grid;place-items:center;padding:3px;overflow:hidden}.login-brand .logo img{width:100%;height:100%;object-fit:contain}.login-brand b,.login-brand small{display:block}.login-brand small{font-size:11px;color:#738296;margin-top:3px}.login-box{background:#fff;border:1px solid #e2e9ef;border-radius:16px;padding:32px;box-shadow:0 20px 55px rgba(11,45,92,.12)}.login-box h1{font-size:23px;color:#0b2d5c;margin:0 0 7px}.login-box>p{font-size:12px;color:#718196;margin:0 0 25px}.login-box .form-group{margin-bottom:16px}.login-box label{display:block;font-size:12px;font-weight:600;margin-bottom:7px;color:#344d68}.login-box input{width:100%;padding:12px;border:1px solid #dce5ec;border-radius:8px;font:inherit;font-size:13px}.login-box input:focus{outline:2px solid #0e8f6f33;border-color:#0e8f6f}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.password-toggle{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:38px;height:36px;border:0;border-radius:6px;background:transparent;color:#587089;cursor:pointer;font-size:19px}.password-toggle:hover,.password-toggle:focus-visible{background:#eef5f5;color:#0e8f6f;outline:2px solid #0e8f6f55}.login-box .btn-primary{width:100%;justify-content:center;margin-top:4px}.login-back{display:block;text-align:center;margin-top:18px;text-decoration:none;color:#0e8f6f;font-size:12px}.login-help{margin-top:17px;padding:12px;background:#f3f7fa;border-radius:8px;color:#63758b;font-size:11px;line-height:1.7}.login-link{border:0;padding:0;background:none;color:#0e8f6f;text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}.login-secondary{width:100%;justify-content:center;margin-top:8px}.login-message{font-size:12px;line-height:1.6;color:#3b5874;margin-top:10px}.login-message.error{color:#b42318}
+    .login-brand .logo .logo-fallback{display:grid;place-items:center;width:100%;height:100%;color:#fff;background:#0e8f6f;border-radius:10px;font-size:23px;font-weight:700}
   </style>
 </head>
 <body>
@@ -15,22 +16,115 @@
     <section class="login-box">
       <h1>เข้าสู่ระบบ</h1><p>สำหรับผู้ดูแลระบบ ผู้นิเทศ และโรงเรียนในสังกัด</p>
       <div id="loginError" class="alert alert-danger" style="display:none;"></div>
-      <form onsubmit="event.preventDefault();handleLogin();">
+      <form id="loginForm" onsubmit="event.preventDefault();handleLogin();">
         <div class="form-group"><label for="loginUsername">ชื่อผู้ใช้ หรือรหัสโรงเรียน</label><input id="loginUsername" name="username" autocomplete="username" required></div>
-        <div class="form-group"><label for="loginPassword">รหัสผ่าน</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required></div>
+        <div class="form-group"><label for="loginPassword">รหัสผ่าน</label><div class="password-wrap"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" id="togglePassword" aria-label="แสดงรหัสผ่าน" aria-pressed="false" title="แสดงรหัสผ่าน" onclick="togglePasswordVisibility()">&#128065;</button></div></div>
         <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
       </form>
+      <div style="text-align:right;margin-top:12px;"><button type="button" class="login-link" id="forgotPasswordLink" onclick="showForgotPassword()">ลืมรหัสผ่าน?</button></div>
+      <div id="forgotPasswordPanel" style="display:none;margin-top:14px;padding:14px;background:#f3f7fa;border-radius:10px;">
+        <div class="form-group"><label for="resetEmail">อีเมลที่ระบุไว้ในระบบ</label><input id="resetEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+        <button type="button" class="btn btn-outline login-secondary" id="sendResetButton" onclick="requestPasswordReset()">ส่งรหัสผ่านชั่วคราว</button>
+        <div id="resetMessage" class="login-message" role="status" aria-live="polite"></div>
+      </div>
+      <section id="passwordChangePanel" style="display:none;margin-top:16px;padding:16px;background:#f3f7fa;border-radius:10px;">
+        <h2 style="font-size:17px;color:#0b2d5c;margin:0 0 8px;">กำหนดรหัสผ่านใหม่</h2>
+        <p style="font-size:12px;color:#63758b;line-height:1.6;">เข้าสู่ระบบด้วยรหัสชั่วคราวแล้ว กรุณากำหนดรหัสผ่านใหม่ก่อนใช้งานต่อ</p>
+        <form id="changePasswordForm" onsubmit="event.preventDefault();submitNewPassword();">
+          <div class="form-group"><label for="newPassword">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+          <div class="form-group"><label for="confirmNewPassword">ยืนยันรหัสผ่านใหม่</label><input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+          <div id="changePasswordMessage" class="login-message" role="status" aria-live="polite"></div>
+          <button type="submit" class="btn btn-primary">บันทึกรหัสผ่านใหม่</button>
+        </form>
+      </section>
       <div class="login-help">โรงเรียนเข้าสู่ระบบด้วยรหัสโรงเรียนและรหัสผ่านที่ได้รับจากผู้ดูแลระบบ หากยังไม่มีรหัสผ่าน โปรดติดต่อสำนักงานเขตพื้นที่การศึกษามัธยมศึกษานราธิวาส</div>
       <a class="login-back" href="../index.html">← กลับหน้าหลัก</a>
     </section>
   </main>
   <script src="../js/config.js"></script><script src="../js/app.js"></script>
+  <script>
+    function showForgotPassword() {
+      const panel = document.getElementById('forgotPasswordPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      if (panel.style.display === 'block') document.getElementById('resetEmail').focus();
+    }
+
+    function showRequiredPasswordChange() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('forgotPasswordLink').style.display = 'none';
+      document.getElementById('forgotPasswordPanel').style.display = 'none';
+      document.querySelector('.login-help').style.display = 'none';
+      document.getElementById('passwordChangePanel').style.display = 'block';
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('newPassword').focus();
+    }
+
+    function requestPasswordReset() {
+      const email = document.getElementById('resetEmail').value.trim();
+      const message = document.getElementById('resetMessage');
+      const button = document.getElementById('sendResetButton');
+      if (!email) { message.textContent = 'กรุณากรอกอีเมล'; message.className = 'login-message error'; return; }
+      button.disabled = true;
+      message.textContent = 'กำลังส่งคำขอ...';
+      message.className = 'login-message';
+      apiPost('forgotPassword', {email})
+        .then(result => {
+          message.textContent = result.message || 'หากอีเมลนี้ตรงกับบัญชีในระบบ ระบบจะส่งรหัสผ่านชั่วคราวให้';
+          message.className = 'login-message' + (result.success ? '' : ' error');
+        })
+        .catch(error => {
+          message.textContent = error.message || 'ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ภายหลัง';
+          message.className = 'login-message error';
+        })
+        .finally(() => { button.disabled = false; });
+    }
+
+    function submitNewPassword() {
+      const password = document.getElementById('newPassword').value;
+      const confirmation = document.getElementById('confirmNewPassword').value;
+      const message = document.getElementById('changePasswordMessage');
+      const button = document.querySelector('#changePasswordForm [type="submit"]');
+      if (password !== confirmation) {
+        message.textContent = 'รหัสผ่านใหม่และการยืนยันไม่ตรงกัน';
+        message.className = 'login-message error';
+        return;
+      }
+      button.disabled = true;
+      message.textContent = 'กำลังบันทึกรหัสผ่าน...';
+      message.className = 'login-message';
+      apiPost('changePassword', {newPassword:password,confirmPassword:confirmation})
+        .then(result => {
+          if (!result.success) throw new Error(result.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
+          APP.user = {...APP.user, ...(result.user || {}), mustResetPassword:false};
+          localStorage.setItem('nited_user', JSON.stringify(APP.user));
+          message.textContent = 'บันทึกรหัสผ่านใหม่สำเร็จ กำลังเข้าสู่ระบบ...';
+          window.location.href = 'dashboard.html';
+        })
+        .catch(error => {
+          message.textContent = error.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ';
+          message.className = 'login-message error';
+        })
+        .finally(() => { button.disabled = false; });
+    }
+
+    function togglePasswordVisibility() {
+      const input = document.getElementById('loginPassword');
+      const button = document.getElementById('togglePassword');
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(reveal));
+      button.setAttribute('aria-label', reveal ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+      button.title = reveal ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+    }
+
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('nited_user') || 'null');
+      if (currentUser && currentUser.token && currentUser.mustResetPassword) {
+        APP.user = currentUser;
+        showRequiredPasswordChange();
+      }
+    } catch (_) {}
+  </script>
 </body>
 </html>
-
-
-
-
-
-.login-brand .logo .logo-fallback{display:grid;place-items:center;width:100%;height:100%;color:#fff;background:#0e8f6f;border-radius:10px;font-size:23px;font-weight:700}
 

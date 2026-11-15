@@ -345,12 +345,17 @@
               <div style="padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <div style="font-size:13px;font-weight:600;">${escapeHtml(b['School Name'] || '-')} · ${escapeHtml(b['Subject Name'] || b.subjectName || '-')}</div>
-                    <div style="font-size:11px;color:#999;">${formatDate(b['Date'] || b.date)} | ${escapeHtml(b['Time'] || b.time || 'ไม่ระบุ')} | ${escapeHtml(b['Period'] || b.period || 'ไม่ระบุ')}</div>
+                    <div style="font-size:13px;font-weight:600;">${escapeHtml(b['Booking ID'] || '-')} · ${escapeHtml(b['School Name'] || '-')}</div>
+                    <div style="font-size:12px;">${escapeHtml(b['Subject Name'] || b.subjectName || '-')} · ${escapeHtml(b['Teacher Name'] || 'ไม่ระบุผู้รับการนิเทศ')}</div>
+                    <div style="font-size:11px;color:#999;">${formatDate(b['Date'] || b.date)} | ${escapeHtml(b['Time'] || b.time || 'ไม่ระบุ')} | ${escapeHtml(b['Period'] || b.period || 'ไม่ระบุ')} | ผู้นิเทศ ${escapeHtml(b['Supervisor Name'] || 'ไม่ระบุ')}</div>
                   </div>
                   ${getStatusBadge(b['Status'] || b.status || 'รอดำเนินการ')}
                 </div>
-                <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="viewBooking(${b.rowNumber})">รายละเอียด</button><button class="btn btn-sm btn-outline" onclick="editBooking(${b.rowNumber})">&#9998; แก้ไข</button></div>
+                <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:8px;">
+                  <button class="btn btn-sm btn-outline" onclick="viewBooking(${b.rowNumber})">รายละเอียด</button>
+                  ${canEditBooking(b) ? `<button class="btn btn-sm btn-outline" onclick="editBooking(${b.rowNumber})">&#9998; แก้ไข</button>` : ''}
+                  ${canCompleteBooking(b) ? `<button class="btn btn-sm btn-primary" onclick="completeBooking(${b.rowNumber})">&#10003; นิเทศสำเร็จ</button>` : ''}
+                </div>
               </div>
             `).join('');
           } else {
@@ -365,9 +370,45 @@
       if (booking) showBookingDetail(booking);
     }
 
+    function isCompletedBooking(booking) {
+      const status = booking['Status'] || booking.status || '';
+      return status === 'นิเทศสำเร็จ' || status === 'นิเทศแล้ว';
+    }
+
+    function isAssignedSupervisor(booking) {
+      return String(booking['Supervisor Name'] || '').trim() === String(APP.user && APP.user.fullName || '').trim();
+    }
+
+    function canEditBooking(booking) {
+      if (isCompletedBooking(booking)) return false;
+      const role = String(APP.user && APP.user.role || '').toLowerCase();
+      return role === 'admin' || (role === 'supervisor' && isAssignedSupervisor(booking)) ||
+        (role === 'school' && String(booking['School ID']) === String(APP.user.schoolId));
+    }
+
+    function canCompleteBooking(booking) {
+      if (isCompletedBooking(booking)) return false;
+      const role = String(APP.user && APP.user.role || '').toLowerCase();
+      return role === 'admin' || (role === 'supervisor' && isAssignedSupervisor(booking));
+    }
+
+    function completeBooking(rowNumber) {
+      const booking = bookingItems.find(item => Number(item.rowNumber) === Number(rowNumber));
+      if (!booking || !canCompleteBooking(booking)) return;
+      if (!confirm('ยืนยันผลว่าได้ดำเนินการนิเทศสำเร็จแล้ว? หลังยืนยันจะล็อกการแก้ไขรายการนี้')) return;
+      apiPost('updateBooking', { rowNumber: Number(rowNumber), status: 'นิเทศสำเร็จ' })
+        .then(result => {
+          if (!result.success) throw new Error(result.message || 'บันทึกสถานะไม่สำเร็จ');
+          showToast(result.message || 'บันทึกผลนิเทศสำเร็จ', 'success');
+          loadMyBookings();
+          loadCalendarEvents('bookingCalendar');
+        })
+        .catch(error => showToast(error.message || 'เกิดข้อผิดพลาด', 'error'));
+    }
+
     function editBooking(rowNumber) {
       const booking = bookingItems.find(item => Number(item.rowNumber) === Number(rowNumber));
-      if (!booking) return;
+      if (!booking || !canEditBooking(booking)) return;
       editingBookingRow = Number(rowNumber);
       document.getElementById('bookSchool').value = booking['School ID'] || '';
       document.getElementById('bookDate').value = booking['Date'] || '';
@@ -389,6 +430,8 @@
       const html = `
         <div style="display:grid;gap:12px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><strong>Booking ID:</strong> ${escapeHtml(booking['Booking ID'] || '-')}</div>
+            <div><strong>วันเวลาที่บันทึก:</strong> ${escapeHtml(booking.Timestamp || '-')}</div>
             <div><strong>วันที่:</strong> ${formatDate(booking['Date'] || booking.date)}</div>
             <div><strong>ช่วงเวลา:</strong> ${escapeHtml(booking['Time'] || booking.time)}</div>
             <div><strong>คาบ:</strong> ${escapeHtml(booking['Period'] || booking.period)}</div>
@@ -398,6 +441,7 @@
             <div><strong>ห้อง:</strong> ${escapeHtml(booking['Room'] || booking.room)}</div>
             <div><strong>ครู/ห้องเรียนเป้าหมาย:</strong> ${escapeHtml(booking['Teacher Name'] || booking.teacherName || 'ไม่ระบุ')}</div>
             <div><strong>ผู้นิเทศ:</strong> ${escapeHtml(booking['Supervisor Name'] || booking.supervisorName || 'ไม่ระบุ')}</div>
+            <div><strong>ผู้บันทึก:</strong> ${escapeHtml(booking.Username || '-')}</div>
           </div>
           <div><strong>สถานะ:</strong> ${getStatusBadge(booking['Status'] || booking.status)}</div>
           ${booking['Notes'] || booking.notes ? `<div><strong>หมายเหตุ:</strong> ${escapeHtml(booking['Notes'] || booking.notes)}</div>` : ''}

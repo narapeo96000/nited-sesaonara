@@ -51,6 +51,12 @@
           <div class="card-body">
             <form id="evaluationForm" onsubmit="return submitEvaluation(event)">
               <div class="form-group">
+                <label>Booking ID ที่กำหนดนิเทศ <span class="required">*</span></label>
+                <select class="form-control" id="evalBooking" required onchange="fillEvaluationFromBooking()">
+                  <option value="">-- เลือกกำหนดนิเทศ --</option>
+                </select>
+              </div>
+              <div class="form-group">
                 <label>โรงเรียนผู้รับการนิเทศ <span class="required">*</span></label>
                 <select class="form-control" id="evalSchool" required>
                   <option value="">-- เลือกโรงเรียนในสังกัด --</option>
@@ -127,8 +133,10 @@
       window.location.href = 'login.html';
     }
 
+    let evaluationBookings = [];
+
     function loadTeachers() {
-      populateSchoolDropdown('evalSchool', '-- เลือกโรงเรียนในสังกัด --', APP.user && APP.user.schoolId)
+      return populateSchoolDropdown('evalSchool', '-- เลือกโรงเรียนในสังกัด --', APP.user && APP.user.schoolId)
         .then(schools => {
           const select = document.getElementById('evalSchool');
           Array.from(select.options).forEach(option => {
@@ -136,6 +144,34 @@
           });
         })
         .catch(err => console.error(err));
+    }
+
+    function loadBookingsForEvaluation() {
+      apiPost('getBookings', {})
+        .then(result => {
+          if (!result.success) return;
+          evaluationBookings = result.bookings.filter(b => (b.Status || b.status) !== 'ปฏิเสธ');
+          const select = document.getElementById('evalBooking');
+          evaluationBookings.forEach(b => {
+            const option = document.createElement('option');
+            option.value = b['Booking ID'];
+            option.textContent = `${b['Booking ID']} · ${formatDate(b.Date)} · ${b['School Name']} · ${b['Subject Name'] || 'ไม่ระบุวิชา'}`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => console.error(err));
+    }
+
+    function fillEvaluationFromBooking() {
+      const booking = evaluationBookings.find(item => item['Booking ID'] === document.getElementById('evalBooking').value);
+      if (!booking) return;
+      document.getElementById('evalSchool').value = booking['School ID'] || '';
+      document.getElementById('evalTeacher').value = booking['Teacher Name'] || '';
+      document.getElementById('evalSubjectGroup').value = booking.Department || '';
+      document.getElementById('evalSubject').value = booking['Subject Name'] || '';
+      document.getElementById('evalGrade').value = booking['Class Level'] || '';
+      document.getElementById('evalPeriod').value = [booking.Period, booking.Time].filter(Boolean).join(' · ');
+      document.getElementById('evalDate').value = booking.Date || '';
     }
 
     function loadRecentEvaluations() {
@@ -148,7 +184,7 @@
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
                     <div style="font-size:13px;font-weight:600;">${escapeHtml(e['School Name'] || e['Teacher Name'] || 'ผลนิเทศโรงเรียน')}</div>
-                    <div style="font-size:11px;color:#999;">${formatDate(e['Teaching Date'])} · ${escapeHtml(e['Supervision Type'] || '')}</div>
+                    <div style="font-size:11px;color:#999;">Booking ID ${escapeHtml(e['Booking ID'] || '-')} · ${formatDate(e['Teaching Date'])} · ${escapeHtml(e['Supervision Type'] || '')}</div>
                   </div>
                   ${getStatusBadge(e['Total Score'] >= 80 ? 'ดีมาก' : e['Total Score'] >= 60 ? 'ดี' : e['Total Score'] >= 40 ? 'พอใช้' : 'ปรับปรุง')}
                 </div>
@@ -168,6 +204,7 @@
       btn.innerHTML = '&#8987; กำลังบันทึก...';
 
       const data = {
+        bookingId: document.getElementById('evalBooking').value,
         schoolId: document.getElementById('evalSchool').value,
         supervisionType: document.getElementById('evalType').value,
         supervisorName: APP.user.fullName,
@@ -209,7 +246,7 @@
 
     // Init
     updateUserUI();
-    loadTeachers();
+    loadTeachers().then(loadBookingsForEvaluation);
     document.getElementById('evalSupervisor').value = APP.user.fullName || '';
     document.getElementById('evalType').required = true;
     loadRecentEvaluations();

@@ -162,6 +162,7 @@
               <thead>
                 <tr>
                   <th>วันที่ส่ง</th>
+                  <th>Booking ID</th>
                   <th>ประเภท</th>
                   <th>ชื่อไฟล์</th>
                   <th>สถานะ</th>
@@ -170,7 +171,7 @@
                 </tr>
               </thead>
               <tbody id="myFilesTable">
-                <tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr>
+                <tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -200,6 +201,7 @@
               <thead>
                 <tr>
                   <th>วันที่ส่ง</th>
+                  <th>Booking ID</th>
                   <th>โรงเรียนเจ้าของหลักฐาน</th>
                   <th>ประเภท</th>
                   <th>ชื่อไฟล์</th>
@@ -208,7 +210,7 @@
                 </tr>
               </thead>
               <tbody id="allFilesTable">
-                <tr><td colspan="6" class="loading"><div class="spinner"></div></td></tr>
+                <tr><td colspan="7" class="loading"><div class="spinner"></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -354,6 +356,7 @@
             tbody.innerHTML = result.files.map(f => `
               <tr>
                 <td>${formatDateTime(f['Timestamp'])}</td>
+                <td>${escapeHtml(f['Booking ID'] || '-')}</td>
                 <td>${getFileTypeIcon(f['File Type'])} ${escapeHtml(f['File Type'])}</td>
                 <td>${escapeHtml(f['File Name'])}</td>
                 <td>${getStatusBadge(f['Status'])}</td>
@@ -364,7 +367,7 @@
               </tr>
             `).join('');
           } else {
-            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">&#128194;</div><h4>ยังไม่มีไฟล์งาน</h4></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">&#128194;</div><h4>ยังไม่มีไฟล์งาน</h4></div></td></tr>';
           }
         })
         .catch(err => console.error(err));
@@ -381,6 +384,7 @@
             tbody.innerHTML = result.files.map(f => `
               <tr>
                 <td>${formatDateTime(f['Timestamp'])}</td>
+                <td>${escapeHtml(f['Booking ID'] || '-')}</td>
                 <td>${escapeHtml(f['School Name'] || 'ไม่ระบุโรงเรียน')}</td>
                 <td>${getFileTypeIcon(f['File Type'])} ${escapeHtml(f['File Type'])}</td>
                 <td>${escapeHtml(f['File Name'])}</td>
@@ -389,21 +393,21 @@
               </tr>
             `).join('');
           } else {
-            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">&#128194;</div><h4>ยังไม่มีไฟล์งาน</h4></div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">&#128194;</div><h4>ยังไม่มีไฟล์งาน</h4></div></td></tr>';
           }
         })
         .catch(err => console.error(err));
     }
 
     function loadBookingsForLink() {
-      apiPost('getBookings', { status: 'ยืนยันแล้ว' })
+      apiPost('getBookings', {})
         .then(result => {
           const select = document.getElementById('linkedBooking');
           if (result.success && result.bookings.length > 0) {
             result.bookings.forEach(b => {
               const opt = document.createElement('option');
-              opt.value = b.rowNumber;
-              opt.textContent = `${formatDate(b['Date'])} - ${b['Teacher Name']} (${b['Subject Name']})`;
+              opt.value = b['Booking ID'];
+              opt.textContent = `${b['Booking ID']} · ${formatDate(b['Date'])} · ${b['School Name']} · ${b['Subject Name'] || 'ไม่ระบุวิชา'}`;
               select.appendChild(opt);
             });
           }

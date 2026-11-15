@@ -91,7 +91,8 @@ function checkAuth() {
     if (!APP.user.token) { localStorage.removeItem('nited_user'); return false; }
     const currentPage = location.pathname.split('/').pop().toLowerCase();
     const role = String(APP.user.role || '').toLowerCase();
-    if (role === 'school' && ['admin.html','evaluation.html'].includes(currentPage)) { location.href = 'dashboard.html'; return false; }
+    if (APP.user.mustResetPassword && currentPage !== 'login.html') { location.href = 'login.html'; return false; }
+    if ((role !== 'admin' && currentPage === 'admin.html') || (role === 'school' && currentPage === 'evaluation.html')) { location.href = 'dashboard.html'; return false; }
     updateUserUI();
     return true;
   }
@@ -122,6 +123,10 @@ function handleLogin() {
       if (result.success) {
         APP.user = { ...result.user, token: result.token };
         localStorage.setItem('nited_user', JSON.stringify(APP.user));
+        if (APP.user.mustResetPassword) {
+          if (typeof showRequiredPasswordChange === 'function') showRequiredPasswordChange();
+          return;
+        }
         window.location.href = 'dashboard.html';
       } else {
         errorEl.textContent = result.message;
@@ -153,7 +158,7 @@ function updateUserUI() {
   if (roleEl && APP.user) roleEl.textContent = role === 'admin' ? 'ผู้ดูแลระบบ' : APP.user.role;
 
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = ['admin','supervisor'].includes(role) ? '' : 'none';
+    el.style.display = role === 'admin' ? '' : 'none';
   });
   document.querySelectorAll('.supervisor-only').forEach(el => {
     el.style.display = ['admin','supervisor'].includes(role) ? '' : 'none';
@@ -268,7 +273,7 @@ function renderCalendar(containerId) {
 
     html += `<div class="${cls}"><div class="day-number">${dayNum}</div>`;
     dayEvents.slice(0, 2).forEach(evt => {
-      const sc = evt.status === 'ยืนยันแล้ว' ? 'confirmed' : evt.status === 'นิเทศแล้ว' ? 'completed' : 'pending';
+      const sc = evt.status === 'ยืนยันแล้ว' ? 'confirmed' : ['นิเทศแล้ว', 'นิเทศสำเร็จ'].includes(evt.status) ? 'completed' : 'pending';
       html += `<div class="calendar-event ${sc}" title="${escapeHtml(evt.title)}">${escapeHtml(evt.title)}</div>`;
     });
     if (dayEvents.length > 2) html += `<div style="font-size:10px;color:#999;">+${dayEvents.length - 2}</div>`;
@@ -307,7 +312,7 @@ function formatDateTime(dateStr) {
 function getStatusBadge(status) {
   const map = {
     'รอดำเนินการ': 'badge-pending', 'ยืนยันแล้ว': 'badge-confirmed',
-    'นิเทศแล้ว': 'badge-completed', 'ปฏิเสธ': 'badge-rejected',
+    'นิเทศแล้ว': 'badge-completed', 'นิเทศสำเร็จ': 'badge-completed', 'ปฏิเสธ': 'badge-rejected',
     'รอตรวจสอบ': 'badge-pending', 'ผ่าน': 'badge-approved',
     'ปรับปรุง': 'badge-revise', 'ดีมาก': 'badge-excellent',
     'ดี': 'badge-good', 'พอใช้': 'badge-fair'

@@ -23,7 +23,7 @@
       ['pages/files.html', '&#128194; หลักฐานโรงเรียน'],
       ['pages/reports.html', '&#128202; รายงานโรงเรียน']
     ];
-    if (privileged) links.push(['pages/admin.html', '&#9881; ผู้ดูแลระบบ']);
+    if (role === 'admin') links.push(['pages/admin.html', '&#9881; ผู้ดูแลระบบ']);
     const appointment = `<div class="home-nav-dropdown"><a href="pages/booking.html">&#128197; กำหนดนิเทศ <span aria-hidden="true">⌄</span></a>${privileged ? '<div class="home-nav-submenu"><a href="pages/evaluation.html">&#128221; ทำแบบนิเทศ</a></div>' : ''}</div>`;
     nav.innerHTML = links.slice(0,1).map(([href,label]) => `<a href="${href}">${label}</a>`).join('') + appointment + links.slice(1).map(([href,label]) => `<a href="${href}">${label}</a>`).join('') + '<a class="nav-button" href="#" id="homeLogout">&#10140; ออกจากระบบ</a>';
     document.getElementById('homeLogout').addEventListener('click', event => {
