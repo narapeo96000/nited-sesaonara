@@ -8,13 +8,13 @@
 
   function render() {
     const term = search.value.trim().toLocaleLowerCase('th');
-    const visible = allSchools.filter(s => `${s.name || ''} ${s.district || ''} ${s.code || ''}`.toLocaleLowerCase('th').includes(term));
+    const visible = allSchools.filter(s => `${s.name || ''} ${s.district || ''} ${s.code || ''} ${s.address || ''}`.toLocaleLowerCase('th').includes(term));
     count.textContent = visible.length;
     if (!visible.length) {
       list.innerHTML = '<div class="directory-state">ไม่พบโรงเรียนที่ตรงกับคำค้น</div>';
       return;
     }
-    list.innerHTML = visible.map(s => `<article class="school-card"><span><b>${escapeHtml(s.name || 'ไม่ระบุชื่อ')}</b><small>${escapeHtml(s.district || 'จังหวัดนราธิวาส')}${s.code ? ` · รหัส ${escapeHtml(s.code)}` : ''}</small></span><span class="school-arrow" aria-hidden="true">↗</span></article>`).join('');
+    list.innerHTML = visible.map(s => `<article class="school-card"><span><b>${escapeHtml(s.name || 'ไม่ระบุชื่อ')}</b><small>${escapeHtml(s.district || 'จังหวัดนราธิวาส')}${s.code ? ` · รหัส ${escapeHtml(s.code)}` : ''}</small>${s.address ? `<small class="school-address"><span aria-hidden="true">⌖</span> ${escapeHtml(s.address)}</small>` : ''}</span><span class="school-arrow" aria-hidden="true">↗</span></article>`).join('');
   }
 
   function escapeHtml(value) {
